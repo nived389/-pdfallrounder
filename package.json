@@ -1,8 +1,8 @@
 {
-  "name": "waste",
+  "name": "docuvex-pro",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "DocuVex Pro — Universal Multi-Format File Engine & PDF Studio by NxD",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
