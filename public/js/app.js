@@ -26,10 +26,12 @@ class OmniConvertApp {
     this.pageAnnotations = new Map();
     this.isDrawing = false;
     this.currentPath = null;
+    this.currentUser = null;
 
     this.initSocket();
     this.initEvents();
     this.fetchFiles();
+    this.initGoogleAuth();
   }
 
   // =========================================================================
@@ -75,6 +77,14 @@ class OmniConvertApp {
       this.socket.on('job:update', (job) => {
         this.handleJobUpdate(job);
       });
+
+      this.socket.on('user:authenticated', (user) => {
+        this.setUserUI(user);
+      });
+
+      this.socket.on('user:logged_out', () => {
+        this.setUserUI(null);
+      });
     } catch (e) {
       console.warn('Socket error:', e);
     }
@@ -102,6 +112,29 @@ class OmniConvertApp {
     });
     const savedTheme = localStorage.getItem('omni-theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Google Sign-In triggers & actions
+    const googleLoginBtn = document.getElementById('btn-google-login');
+    if (googleLoginBtn) {
+      googleLoginBtn.addEventListener('click', () => {
+        document.getElementById('modal-google-auth').style.display = 'flex';
+      });
+    }
+
+    const demoGoogleBtn = document.getElementById('btn-demo-google-login');
+    if (demoGoogleBtn) {
+      demoGoogleBtn.addEventListener('click', () => this.loginWithGoogleDemo());
+    }
+
+    const logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => this.logout());
+    }
+
+    const saveClientIdBtn = document.getElementById('btn-save-client-id');
+    if (saveClientIdBtn) {
+      saveClientIdBtn.addEventListener('click', () => this.saveGoogleClientId());
+    }
 
     // Sample loading buttons
     document.getElementById('btn-add-samples').addEventListener('click', () => this.loadSamples(12));
@@ -1042,6 +1075,174 @@ class OmniConvertApp {
       }
     } catch (e) {
       this.showToast('Save failed');
+    }
+  }
+
+  // =========================================================================
+  // Google Authentication & User State
+  // =========================================================================
+
+  async initGoogleAuth() {
+    try {
+      // 1. Check current logged-in user
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.success && data.user) {
+        this.setUserUI(data.user);
+      } else {
+        this.setUserUI(null);
+      }
+
+      // 2. Fetch configured Google OAuth Client ID if available
+      const cfgRes = await fetch('/api/auth/config');
+      const cfgData = await cfgRes.json();
+      const clientIdInput = document.getElementById('input-google-client-id');
+      if (cfgData.clientId && clientIdInput) {
+        clientIdInput.value = cfgData.clientId;
+      }
+
+      this.setupGoogleGSI(cfgData.clientId);
+    } catch (e) {
+      console.warn('Google Auth init warning:', e);
+    }
+  }
+
+  setupGoogleGSI(clientId) {
+    if (!clientId) return;
+    const renderGSI = () => {
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (res) => this.handleGoogleCredential(res)
+          });
+          const container = document.getElementById('google-gsi-btn-container');
+          if (container) {
+            container.innerHTML = '';
+            window.google.accounts.id.renderButton(container, {
+              theme: 'outline',
+              size: 'large',
+              shape: 'rectangular',
+              width: 280,
+              text: 'continue_with'
+            });
+          }
+        } catch (err) {
+          console.warn('GIS error:', err);
+        }
+      }
+    };
+
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+      renderGSI();
+    } else {
+      window.addEventListener('load', renderGSI);
+    }
+  }
+
+  async handleGoogleCredential(response) {
+    try {
+      this.showToast('Verifying Google credentials...');
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential })
+      });
+      const data = await res.json();
+      if (data.success) {
+        this.setUserUI(data.user);
+        this.closeModals();
+        this.showToast(`Welcome, ${data.user.name}!`);
+      } else {
+        this.showToast('Google sign-in error: ' + (data.error || 'Failed'));
+      }
+    } catch (e) {
+      this.showToast('Authentication network error');
+    }
+  }
+
+  async loginWithGoogleDemo() {
+    try {
+      this.showToast('Signing in with Google Account...');
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profile: {
+            id: 'google_nxd_' + Math.floor(Math.random() * 10000),
+            name: 'NxD (Google Account)',
+            email: 'nxd.creator@gmail.com',
+            picture: 'https://lh3.googleusercontent.com/a/default-user=s96-c'
+          }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        this.setUserUI(data.user);
+        this.closeModals();
+        this.showToast(`Signed in as ${data.user.name}`);
+      }
+    } catch (e) {
+      this.showToast('Login failed');
+    }
+  }
+
+  async logout() {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      this.setUserUI(null);
+      this.showToast('Signed out of Google');
+    } catch (e) {
+      this.showToast('Logout error');
+    }
+  }
+
+  async saveGoogleClientId() {
+    const input = document.getElementById('input-google-client-id');
+    const clientId = input ? input.value.trim() : '';
+    if (!clientId) {
+      this.showToast('Please enter a valid Google Client ID');
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        this.setupGoogleGSI(data.clientId);
+        this.showToast('Google Client ID updated!');
+      }
+    } catch (e) {
+      this.showToast('Failed to save Client ID');
+    }
+  }
+
+  setUserUI(user) {
+    this.currentUser = user;
+    const loginBtn = document.getElementById('btn-google-login');
+    const userPill = document.getElementById('user-profile-pill');
+    const userName = document.getElementById('nav-user-name');
+    const userAvatar = document.getElementById('nav-user-avatar');
+
+    if (user) {
+      if (loginBtn) loginBtn.style.display = 'none';
+      if (userPill) userPill.style.display = 'inline-flex';
+      if (userName) userName.textContent = user.name || user.email;
+      if (userAvatar) {
+        if (user.picture) {
+          userAvatar.src = user.picture;
+          userAvatar.style.display = 'inline-block';
+        } else {
+          userAvatar.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="%236366f1"/><text x="12" y="16" font-size="12" font-family="sans-serif" text-anchor="middle" fill="white" font-weight="bold">' + (user.name ? user.name[0].toUpperCase() : 'U') + '</text></svg>';
+          userAvatar.style.display = 'inline-block';
+        }
+      }
+    } else {
+      if (loginBtn) loginBtn.style.display = 'inline-flex';
+      if (userPill) userPill.style.display = 'none';
     }
   }
 

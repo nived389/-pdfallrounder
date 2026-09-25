@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -51,6 +52,26 @@
           <span class="creator-by">Created by</span>
           <span class="creator-name">NxD</span>
         </button>
+
+        <!-- Google Sign-In Component -->
+        <div class="google-auth-wrapper" id="google-auth-wrapper">
+          <button class="btn-google-login" id="btn-google-login" title="Sign in with Google">
+            <svg class="google-icon" width="16" height="16" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.36 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+            <span>Google Sign-In</span>
+          </button>
+
+          <div class="user-profile-pill" id="user-profile-pill" style="display: none;">
+            <img class="user-avatar" id="nav-user-avatar" src="" alt="Avatar" />
+            <span class="user-nav-name" id="nav-user-name">User</span>
+            <button class="btn-logout" id="btn-logout" title="Sign Out">✕</button>
+          </div>
+        </div>
+
         <button class="theme-btn" id="btn-theme-toggle" title="Toggle theme">
           <span class="icon-sun">☀️</span>
           <span class="icon-moon">🌙</span>
@@ -472,6 +493,45 @@
       </div>
 
       <button class="btn btn-primary btn-block mt-4" onclick="app.closeModals()">Close Profile</button>
+    </div>
+  </div>
+
+  <!-- =================================================== -->
+  <!-- MODAL 6: GOOGLE SIGN-IN DIALOG -->
+  <!-- =================================================== -->
+  <div class="modal-overlay" id="modal-google-auth" style="display: none;">
+    <div class="modal-box modal-sm text-center">
+      <div class="google-modal-icon-wrap">
+        <svg width="44" height="44" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.36 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+      </div>
+      <h3 class="mt-3">Sign in with Google</h3>
+      <p class="modal-subtitle">Connect your Google Account for cloud storage & Pro privileges</p>
+
+      <!-- Google GIS Button Container -->
+      <div id="google-gsi-btn-container" class="mt-3" style="display: flex; justify-content: center;"></div>
+
+      <div class="auth-divider mt-3"><span>OR QUICK ACCESS</span></div>
+
+      <!-- Quick 1-Click Google Sign-In -->
+      <button class="btn btn-secondary btn-block mt-3" id="btn-demo-google-login">
+        ⚡ 1-Click Google Account Sign-In
+      </button>
+
+      <!-- Custom Client ID Expander -->
+      <details class="google-client-details mt-3">
+        <summary>Configure Google Client ID</summary>
+        <div class="mt-2 text-left">
+          <input type="text" id="input-google-client-id" class="simple-input" placeholder="Google OAuth Client ID (.apps.googleusercontent.com)" />
+          <button class="btn btn-xs btn-primary mt-2" id="btn-save-client-id">Save Client ID</button>
+        </div>
+      </details>
+
+      <button class="btn btn-ghost btn-block btn-sm mt-3" onclick="app.closeModals()">Cancel</button>
     </div>
   </div>
 

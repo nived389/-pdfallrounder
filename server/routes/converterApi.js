@@ -379,6 +379,91 @@ function createConverterRoutes(io, jobQueue) {
     }
   });
 
+  // ==========================================
+  // GOOGLE AUTHENTICATION ENDPOINTS
+  // ==========================================
+  let currentUser = null;
+  let customGoogleClientId = process.env.GOOGLE_CLIENT_ID || '';
+
+  function parseJwt(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  router.get('/auth/config', (req, res) => {
+    res.json({
+      success: true,
+      clientId: customGoogleClientId || null
+    });
+  });
+
+  router.post('/auth/config', (req, res) => {
+    const { clientId } = req.body;
+    if (clientId) {
+      customGoogleClientId = clientId.trim();
+    }
+    res.json({ success: true, clientId: customGoogleClientId });
+  });
+
+  router.post('/auth/google', (req, res) => {
+    try {
+      const { credential, profile } = req.body;
+      let userData = null;
+
+      if (credential) {
+        const decoded = parseJwt(credential);
+        if (decoded) {
+          userData = {
+            id: decoded.sub,
+            email: decoded.email,
+            name: decoded.name || decoded.email.split('@')[0],
+            picture: decoded.picture || null,
+            plan: 'Pro Unlimited',
+            authenticatedVia: 'Google'
+          };
+        }
+      }
+
+      if (!userData && profile) {
+        userData = {
+          id: profile.id || 'google_user_' + Date.now(),
+          email: profile.email || 'user@gmail.com',
+          name: profile.name || 'Google User',
+          picture: profile.picture || null,
+          plan: 'Pro Unlimited',
+          authenticatedVia: 'Google'
+        };
+      }
+
+      if (!userData) {
+        return res.status(400).json({ success: false, error: 'Invalid Google credential' });
+      }
+
+      currentUser = userData;
+      if (io) io.emit('user:authenticated', currentUser);
+
+      res.json({ success: true, user: currentUser });
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+
+  router.get('/auth/me', (req, res) => {
+    res.json({ success: true, user: currentUser });
+  });
+
+  router.post('/auth/logout', (req, res) => {
+    currentUser = null;
+    if (io) io.emit('user:logged_out');
+    res.json({ success: true, message: 'Logged out successfully' });
+  });
+
   return router;
 }
 
