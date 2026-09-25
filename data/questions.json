@@ -1,0 +1,307 @@
+{
+  "general": [
+    {
+      "id": "gen_1",
+      "category": "General Knowledge",
+      "text": "Which planet in our solar system is known as the Red Planet?",
+      "options": ["Venus", "Mars", "Jupiter", "Saturn"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "gen_2",
+      "category": "General Knowledge",
+      "text": "What is the largest ocean on Earth?",
+      "options": ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"],
+      "correctIndex": 3,
+      "timeLimit": 15
+    },
+    {
+      "id": "gen_3",
+      "category": "General Knowledge",
+      "text": "How many days are there in a leap year?",
+      "options": ["365", "366", "364", "367"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "gen_4",
+      "category": "General Knowledge",
+      "text": "What is the chemical symbol for Gold?",
+      "options": ["Ag", "Fe", "Au", "Pb"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "gen_5",
+      "category": "General Knowledge",
+      "text": "Which country is home to the Great Barrier Reef?",
+      "options": ["Brazil", "Australia", "South Africa", "Philippines"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "gen_6",
+      "category": "General Knowledge",
+      "text": "Who painted the Mona Lisa?",
+      "options": ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "gen_7",
+      "category": "General Knowledge",
+      "text": "What is the hardest natural substance known on Earth?",
+      "options": ["Titanium", "Diamond", "Quartz", "Graphene"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "gen_8",
+      "category": "General Knowledge",
+      "text": "Which country has the most natural lakes in the world?",
+      "options": ["Canada", "Russia", "USA", "Finland"],
+      "correctIndex": 0,
+      "timeLimit": 15
+    }
+  ],
+  "science_tech": [
+    {
+      "id": "tech_1",
+      "category": "Science & Tech",
+      "text": "What does 'HTTP' stand for in web addresses?",
+      "options": [
+        "HyperText Transfer Protocol",
+        "High Transfer Terminal Protocol",
+        "HyperTech Total Program",
+        "Hybrid Transfer Text Package"
+      ],
+      "correctIndex": 0,
+      "timeLimit": 15
+    },
+    {
+      "id": "tech_2",
+      "category": "Science & Tech",
+      "text": "Which programming language was created by Brendan Eich in just 10 days?",
+      "options": ["Python", "Java", "JavaScript", "C++"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "tech_3",
+      "category": "Science & Tech",
+      "text": "What is the primary gas found in the Earth's atmosphere?",
+      "options": ["Oxygen", "Nitrogen", "Carbon Dioxide", "Argon"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "tech_4",
+      "category": "Science & Tech",
+      "text": "What does GPU stand for?",
+      "options": [
+        "General Processing Unit",
+        "Graphical Program Unit",
+        "Graphics Processing Unit",
+        "Grid Performance Utility"
+      ],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "tech_5",
+      "category": "Science & Tech",
+      "text": "Which company developed the Android mobile operating system?",
+      "options": ["Apple", "Google", "Microsoft", "Samsung"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "tech_6",
+      "category": "Science & Tech",
+      "text": "At what temperature Celsius does water boil at standard pressure?",
+      "options": ["90°C", "100°C", "110°C", "120°C"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "tech_7",
+      "category": "Science & Tech",
+      "text": "What part of the plant cell is responsible for photosynthesis?",
+      "options": ["Mitochondria", "Nucleus", "Chloroplast", "Ribosome"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "tech_8",
+      "category": "Science & Tech",
+      "text": "What is the standard port number for HTTPS traffic?",
+      "options": ["80", "8080", "443", "22"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    }
+  ],
+  "pop_culture": [
+    {
+      "id": "pop_1",
+      "category": "Pop Culture & Movies",
+      "text": "Which movie won the Academy Award for Best Picture in 2020, becoming the first non-English language film to win?",
+      "options": ["Roma", "Parasite", "Minari", "1917"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "pop_2",
+      "category": "Pop Culture & Movies",
+      "text": "In 'The Matrix', what color pill does Neo take?",
+      "options": ["Blue", "Red", "Green", "Yellow"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "pop_3",
+      "category": "Pop Culture & Movies",
+      "text": "Who is known as the 'King of Pop'?",
+      "options": ["Elvis Presley", "Prince", "Michael Jackson", "Freddie Mercury"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "pop_4",
+      "category": "Pop Culture & Movies",
+      "text": "Which fictional wizard attended Hogwarts School of Witchcraft and Wizardry?",
+      "options": ["Gandalf", "Harry Potter", "Merlin", "Doctor Strange"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "pop_5",
+      "category": "Pop Culture & Movies",
+      "text": "What is the highest-grossing film of all time (unadjusted for inflation)?",
+      "options": ["Avengers: Endgame", "Titanic", "Avatar", "Star Wars: The Force Awakens"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "pop_6",
+      "category": "Pop Culture & Movies",
+      "text": "In the sitcom 'Friends', what is the name of Ross and Monica's dog growing up?",
+      "options": ["Chi-Chi", "Marcel", "LaPooh", "Fluffy"],
+      "correctIndex": 0,
+      "timeLimit": 15
+    },
+    {
+      "id": "pop_7",
+      "category": "Pop Culture & Movies",
+      "text": "Which superhero is also known as the 'Caped Crusader'?",
+      "options": ["Superman", "Spider-Man", "Batman", "Iron Man"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    }
+  ],
+  "sports": [
+    {
+      "id": "spo_1",
+      "category": "Sports",
+      "text": "How many players are on the pitch for one team in a standard soccer match?",
+      "options": ["9", "10", "11", "12"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "spo_2",
+      "category": "Sports",
+      "text": "Which country won the FIFA World Cup in 2022?",
+      "options": ["France", "Argentina", "Brazil", "Croatia"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "spo_3",
+      "category": "Sports",
+      "text": "In tennis, what is the term for a score of zero?",
+      "options": ["Nil", "Zero", "Love", "Duck"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "spo_4",
+      "category": "Sports",
+      "text": "Which Olympic Games event is known as the 'Decathlon'?",
+      "options": ["5 events", "8 events", "10 events", "12 events"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "spo_5",
+      "category": "Sports",
+      "text": "Who holds the record for the most Olympic gold medals of all time?",
+      "options": ["Usain Bolt", "Michael Phelps", "Carl Lewis", "Larisa Latynina"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "spo_6",
+      "category": "Sports",
+      "text": "How many points is a touchdown worth in American football (excluding PAT)?",
+      "options": ["3", "6", "7", "8"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    }
+  ],
+  "geography_history": [
+    {
+      "id": "geo_1",
+      "category": "History & Geography",
+      "text": "In which year did the Apollo 11 mission land humans on the Moon?",
+      "options": ["1965", "1969", "1971", "1975"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "geo_2",
+      "category": "History & Geography",
+      "text": "What is the capital city of Japan?",
+      "options": ["Kyoto", "Osaka", "Tokyo", "Hiroshima"],
+      "correctIndex": 2,
+      "timeLimit": 15
+    },
+    {
+      "id": "geo_3",
+      "category": "History & Geography",
+      "text": "Which ancient wonder was located in the city of Alexandria, Egypt?",
+      "options": [
+        "The Colossus",
+        "The Lighthouse of Alexandria",
+        "The Hanging Gardens",
+        "The Temple of Artemis"
+      ],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "geo_4",
+      "category": "History & Geography",
+      "text": "Which is the longest river in the world?",
+      "options": ["Amazon River", "Nile River", "Yangtze River", "Mississippi River"],
+      "correctIndex": 1,
+      "timeLimit": 15
+    },
+    {
+      "id": "geo_5",
+      "category": "History & Geography",
+      "text": "Who was the first President of the United States?",
+      "options": ["Thomas Jefferson", "John Adams", "Benjamin Franklin", "George Washington"],
+      "correctIndex": 3,
+      "timeLimit": 15
+    },
+    {
+      "id": "geo_6",
+      "category": "History & Geography",
+      "text": "Mount Everest is located in which mountain range?",
+      "options": ["Andes", "Rockies", "Alps", "Himalayas"],
+      "correctIndex": 3,
+      "timeLimit": 15
+    }
+  ]
+}

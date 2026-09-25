@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniConvert Pro — Advanced Universal Converter & PDF Studio</title>
+  <meta name="description" content="Professional browser suite for universal multi-format conversion, batch PDF merging, interactive PDF editing, digital signatures, and reading.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- Top Navbar -->
+    <header class="navbar">
+      <div class="nav-brand" onclick="app.resetView()">
+        <div class="logo-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="M12 18v-6"></path>
+            <path d="M9 15l3-3 3 3"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-name">OmniConvert <span class="brand-tag">PRO SUITE</span></div>
+          <div class="brand-desc">Universal Conversion & PDF Studio</div>
+        </div>
+      </div>
+
+      <div class="nav-center">
+        <span class="file-count-badge" id="file-count-badge">0 files</span>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-secondary btn-sm" id="btn-add-samples" title="Load realistic sample files to test">
+          ⚡ Add Samples (12)
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-add-stress" title="Load 50 files for stress testing">
+          🚀 50-File Batch
+        </button>
+        <button class="btn btn-ghost btn-sm" id="btn-clear-all" title="Clear workspace">
+          Clear
+        </button>
+        <button class="theme-btn" id="btn-theme-toggle" title="Toggle theme">
+          <span class="icon-sun">☀️</span>
+          <span class="icon-moon">🌙</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+
+      <!-- ============================================== -->
+      <!-- 1. DRAG AND DROP UPLOAD ZONE -->
+      <!-- ============================================== -->
+      <section class="upload-section" id="upload-section">
+        <input type="file" id="file-input" multiple style="display: none;" />
+        <div class="drop-card" id="drop-card">
+          <div class="drop-icon">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h2>Drop your files here, or <span class="browse-link">browse</span></h2>
+          <p class="drop-help">Supports PDFs, Images (PNG, JPG, WEBP, BMP), Word (DOCX), Text (TXT, HTML, CSV) • Handles 100+ files</p>
+        </div>
+
+        <!-- Live Upload Progress -->
+        <div class="upload-progress-box" id="upload-progress-box" style="display: none;">
+          <div class="upload-progress-info">
+            <span id="upload-status-text">Uploading files...</span>
+            <span id="upload-percentage">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="upload-progress-fill"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- 2. ADVANCED ACTION BAR (Shown when files exist) -->
+      <!-- ============================================== -->
+      <section class="action-bar" id="action-bar" style="display: none;">
+        <div class="action-left">
+          <label class="checkbox-label">
+            <input type="checkbox" id="chk-select-all" checked />
+            <span id="selected-label">All selected</span>
+          </label>
+        </div>
+
+        <div class="action-buttons">
+          <!-- Action 1: Advanced Merge into 1 PDF -->
+          <button class="btn btn-primary" id="btn-merge-action">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="13" height="13" rx="2"></rect><path d="M5 8v10a2 2 0 0 0 2 2h10"></path></svg>
+            Merge to PDF
+          </button>
+
+          <!-- Action 2: Advanced Conversion Dialog -->
+          <button class="btn btn-secondary" id="btn-open-convert-modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Convert Options...
+          </button>
+
+          <!-- Quick Convert Selector -->
+          <div class="convert-group">
+            <select id="quick-convert-select" class="simple-select">
+              <option value="pdf">to PDF (.pdf)</option>
+              <option value="png">to PNG (.png)</option>
+              <option value="jpg">to JPG (.jpg)</option>
+              <option value="docx">to Word (.docx)</option>
+              <option value="txt">to Text (.txt)</option>
+            </select>
+            <button class="btn btn-primary btn-sm" id="btn-quick-convert">Run</button>
+          </div>
+
+          <!-- Action 3: Download ZIP -->
+          <button class="btn btn-ghost" id="btn-download-all-zip" title="Download selected files as a ZIP">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            ZIP Archive
+          </button>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- 3. WORKSPACE FILES GRID -->
+      <!-- ============================================== -->
+      <section class="files-section" id="files-section">
+        <div class="files-grid" id="files-grid"></div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- =================================================== -->
+  <!-- MODAL 1: ADVANCED MERGE-TO-PDF STUDIO -->
+  <!-- =================================================== -->
+  <div class="modal-overlay" id="modal-merge" style="display: none;">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3>Advanced Merge to PDF Studio</h3>
+          <p class="modal-subtitle">Sequence files, generate cover pages, and customize output dimensions</p>
+        </div>
+        <button class="btn-close" onclick="app.closeModals()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Filmstrip -->
+        <div class="section-label">Page Sequence (Drag cards to reorder):</div>
+        <div class="merge-filmstrip" id="merge-filmstrip"></div>
+
+        <!-- Advanced Options Grid -->
+        <div class="options-grid">
+          <div class="option-col">
+            <div class="simple-form-row">
+              <label>Output Filename</label>
+              <input type="text" id="merge-filename" class="simple-input" value="Combined_Portfolio.pdf" />
+            </div>
+
+            <div class="simple-form-row">
+              <label>Page Size</label>
+              <select id="merge-page-size" class="simple-select form-control">
+                <option value="A4" selected>A4 (210 × 297 mm) — Standard</option>
+                <option value="Letter">US Letter (8.5 × 11 in)</option>
+                <option value="Legal">US Legal (8.5 × 14 in)</option>
+                <option value="Auto">Auto / Retain Original Dimensions</option>
+              </select>
+            </div>
+
+            <div class="simple-form-row">
+              <label>Orientation</label>
+              <select id="merge-orientation" class="simple-select form-control">
+                <option value="Portrait" selected>Portrait</option>
+                <option value="Landscape">Landscape</option>
+                <option value="Auto">Auto-detect per component</option>
+              </select>
+            </div>
+
+            <div class="simple-form-row">
+              <label>Page Numbering</label>
+              <select id="merge-numbering" class="simple-select form-control">
+                <option value="BottomCenter" selected>Bottom Center ("Page X of Y")</option>
+                <option value="BottomRight">Bottom Right ("Page X")</option>
+                <option value="TopRight">Top Right Header</option>
+                <option value="None">None</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="option-col">
+            <!-- Cover Page Settings -->
+            <div class="form-card">
+              <label class="checkbox-label mb-2">
+                <input type="checkbox" id="chk-merge-cover" checked />
+                <strong>Add Executive Cover Page</strong>
+              </label>
+
+              <div id="cover-fields">
+                <input type="text" id="merge-title-input" class="simple-input mb-2" placeholder="Document Title" value="Quarterly Portfolio & Review" />
+                <input type="text" id="merge-subtitle-input" class="simple-input mb-2" placeholder="Subtitle" value="Compiled from Multi-Format Documents & Assets" />
+                <input type="text" id="merge-author-input" class="simple-input mb-2" placeholder="Author / Organization" value="OmniConvert Publishing" />
+                
+                <div class="simple-form-row">
+                  <label>Accent Color Theme</label>
+                  <div class="color-palette">
+                    <label class="color-radio"><input type="radio" name="cover-color" value="#3b82f6" checked><span style="background: #3b82f6;"></span></label>
+                    <label class="color-radio"><input type="radio" name="cover-color" value="#10b981"><span style="background: #10b981;"></span></label>
+                    <label class="color-radio"><input type="radio" name="cover-color" value="#ef4444"><span style="background: #ef4444;"></span></label>
+                    <label class="color-radio"><input type="radio" name="cover-color" value="#a855f7"><span style="background: #a855f7;"></span></label>
+                    <label class="color-radio"><input type="radio" name="cover-color" value="#f59e0b"><span style="background: #f59e0b;"></span></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table of Contents Toggle -->
+            <div class="form-card mt-2">
+              <label class="checkbox-label">
+                <input type="checkbox" id="chk-merge-toc" checked />
+                <span><strong>Generate Table of Contents (TOC)</strong> page</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="app.closeModals()">Cancel</button>
+        <button class="btn btn-primary btn-lg" id="btn-confirm-merge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="13" height="13" rx="2"></rect><path d="M5 8v10a2 2 0 0 0 2 2h10"></path></svg>
+          Merge & Download PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================================================== -->
+  <!-- MODAL 2: ADVANCED CONVERSION OPTIONS DIALOG -->
+  <!-- =================================================== -->
+  <div class="modal-overlay" id="modal-convert-options" style="display: none;">
+    <div class="modal-box modal-md">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3>Advanced Format Conversion Options</h3>
+          <p class="modal-subtitle">Fine-tune target format, DPI, resolution, and output compression</p>
+        </div>
+        <button class="btn-close" onclick="app.closeModals()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="simple-form-row">
+          <label>Target Format</label>
+          <select id="adv-convert-target" class="simple-select form-control">
+            <option value="pdf" selected>PDF Document (.pdf)</option>
+            <option value="png">PNG High-Res Image (.png)</option>
+            <option value="jpg">JPEG Compressed Image (.jpg)</option>
+            <option value="webp">WEBP Modern Web Image (.webp)</option>
+            <option value="docx">Microsoft Word Document (.docx)</option>
+            <option value="txt">Plain Text Extraction (.txt)</option>
+            <option value="html">HTML Web Page (.html)</option>
+          </select>
+        </div>
+
+        <div class="simple-form-row">
+          <label>Resolution / Target DPI</label>
+          <select id="adv-convert-dpi" class="simple-select form-control">
+            <option value="150" selected>150 DPI — Balanced (Standard)</option>
+            <option value="72">72 DPI — Screen / Web Lightweight</option>
+            <option value="300">300 DPI — High-Definition Print</option>
+            <option value="600">600 DPI — Archival Ultra Fidelity</option>
+          </select>
+        </div>
+
+        <div class="simple-form-row">
+          <label>Quality / Compression</label>
+          <select id="adv-convert-quality" class="simple-select form-control">
+            <option value="normal" selected>Normal / Balanced Compression (-40%)</option>
+            <option value="best">Maximum / Lossless Preservation</option>
+            <option value="low">Compact / High Compression (-70%)</option>
+          </select>
+        </div>
+
+        <div class="simple-form-row">
+          <label>Max Width / Downscaling</label>
+          <select id="adv-convert-scale" class="simple-select form-control">
+            <option value="" selected>Original Dimensions</option>
+            <option value="1920">1920px (Full HD)</option>
+            <option value="1280">1280px (Standard Web)</option>
+            <option value="800">800px (Mobile Thumbnail)</option>
+          </select>
+        </div>
+
+        <div class="simple-form-row checkbox-row mt-2">
+          <label class="checkbox-label">
+            <input type="checkbox" id="adv-convert-zip" checked />
+            <span>Bundle converted files into single <strong>ZIP archive</strong></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="app.closeModals()">Cancel</button>
+        <button class="btn btn-primary" id="btn-adv-convert-start">Start Conversion</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================================================== -->
+  <!-- MODAL 3: PRO PDF STUDIO & VIEWER -->
+  <!-- =================================================== -->
+  <div class="modal-overlay" id="modal-editor" style="display: none;">
+    <div class="modal-box modal-fullscreen">
+      
+      <!-- Top Studio Toolbar Ribbon -->
+      <div class="studio-header">
+        <div class="studio-left">
+          <div class="doc-badge" id="studio-doc-badge">PDF</div>
+          <div class="doc-meta">
+            <strong id="viewer-filename">Document.pdf</strong>
+            <span id="viewer-page-info">Page 1 of 1</span>
+          </div>
+        </div>
+
+        <!-- Tool Ribbon -->
+        <div class="studio-ribbon">
+          <!-- Tools -->
+          <div class="ribbon-group">
+            <button class="ribbon-btn active" data-tool="view" id="tool-view" title="Browse / Read">👁 View</button>
+            <button class="ribbon-btn" data-tool="draw" id="tool-draw" title="Draw / Sign">✏️ Draw</button>
+            <button class="ribbon-btn" data-tool="highlight" id="tool-highlight" title="Highlighter">🖍️ Highlight</button>
+            <button class="ribbon-btn" data-tool="text" id="tool-text" title="Add Note / Text">🔤 Text Note</button>
+            <button class="ribbon-btn" data-tool="signature" id="tool-signature" title="Insert Digital Signature">✍️ Sign</button>
+            <button class="ribbon-btn" data-tool="stamp" id="tool-stamp" title="Add Stamp">🏷️ Stamp</button>
+            <button class="ribbon-btn" data-tool="watermark" id="tool-watermark" title="Diagonal Watermark">💧 Watermark</button>
+            <button class="ribbon-btn" data-tool="shape" id="tool-shape" title="Rectangle Box">📐 Shape</button>
+          </div>
+
+          <div class="ribbon-sep"></div>
+
+          <!-- Color & Size Controls -->
+          <div class="ribbon-group" id="ribbon-brush-controls">
+            <input type="color" id="studio-color-picker" value="#ef4444" title="Stroke / Text Color" />
+            <div class="size-pill">
+              <input type="range" id="studio-size-slider" min="2" max="24" value="4" />
+              <span id="studio-size-val">4px</span>
+            </div>
+          </div>
+
+          <div class="ribbon-sep"></div>
+
+          <!-- Page Operations -->
+          <div class="ribbon-group">
+            <button class="ribbon-btn-sm" id="btn-rotate-cw" title="Rotate Page 90° Clockwise">↻ Rotate</button>
+            <button class="ribbon-btn-sm" id="btn-add-blank" title="Add Blank Page">+ Blank</button>
+            <button class="ribbon-btn-sm" id="btn-delete-page" title="Delete Current Page">🗑 Del</button>
+            <button class="ribbon-btn-sm" id="btn-undo-draw" title="Undo">↩ Undo</button>
+            <button class="ribbon-btn-sm" id="btn-clear-draw" title="Clear">Clear</button>
+          </div>
+
+          <div class="ribbon-sep"></div>
+
+          <!-- Zoom & Display Mode -->
+          <div class="ribbon-group">
+            <button class="ribbon-btn-sm" id="btn-zoom-out">-</button>
+            <span id="zoom-text" class="zoom-indicator">100%</span>
+            <button class="ribbon-btn-sm" id="btn-zoom-in">+</button>
+            <button class="ribbon-btn-sm" id="btn-dark-reading" title="Night / Invert Mode">🌓 Invert</button>
+          </div>
+        </div>
+
+        <div class="studio-right">
+          <button class="btn btn-secondary btn-sm" id="btn-editor-download-raw">⬇ Download Original</button>
+          <button class="btn btn-primary btn-sm" id="btn-editor-save">Save & Download</button>
+          <button class="btn-close" onclick="app.closeModals()">✕</button>
+        </div>
+      </div>
+
+      <!-- Studio Body (Thumbnail strip + Canvas) -->
+      <div class="studio-body">
+        <!-- Collapsible Left Page Strip -->
+        <div class="studio-page-strip" id="studio-page-strip"></div>
+
+        <!-- Center Viewport -->
+        <div class="viewer-body">
+          <button class="page-nav-btn nav-prev" id="btn-prev-page">‹</button>
+
+          <div class="canvas-viewport" id="canvas-viewport">
+            <div class="canvas-wrapper" id="canvas-wrapper">
+              <canvas id="view-base-canvas" width="700" height="950"></canvas>
+              <canvas id="view-draw-canvas" width="700" height="950"></canvas>
+            </div>
+          </div>
+
+          <button class="page-nav-btn nav-next" id="btn-next-page">›</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================================================== -->
+  <!-- MODAL 4: PROCESSING & PROGRESS OVERLAY -->
+  <!-- =================================================== -->
+  <div class="modal-overlay" id="modal-processing" style="display: none;">
+    <div class="modal-box modal-sm text-center">
+      <div class="spinner-box" id="proc-spinner">
+        <div class="simple-spinner"></div>
+      </div>
+      <div class="success-icon-box" id="proc-success" style="display: none;">✓</div>
+
+      <h3 id="proc-title" class="mt-3">Processing...</h3>
+      <p id="proc-desc" class="proc-text">Converting and rendering documents asynchronously.</p>
+
+      <div class="progress-bar mt-3" id="proc-bar-wrap">
+        <div class="progress-fill" id="proc-fill" style="width: 25%;"></div>
+      </div>
+
+      <div class="mt-4" id="proc-actions" style="display: none;">
+        <a href="#" class="btn btn-primary btn-block" id="btn-proc-download" download>Download File</a>
+        <button class="btn btn-ghost btn-sm mt-2" onclick="app.closeModals()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="simple-toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

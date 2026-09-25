@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizRoom — Live Multiplayer Quiz Game</title>
+  <link rel="stylesheet" href="css/quiz.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand" id="brand-logo">
+      <span class="brand-icon">⚡</span>
+      <span>QuizRoom</span>
+    </div>
+    <div class="header-actions">
+      <a href="/arena" class="icon-btn" style="width: auto; padding: 0 0.85rem; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: inline-flex; gap: 0.4rem; color: #fff;" title="Play ArenaClash">⚔️ ArenaClash</a>
+      <button class="icon-btn" id="btn-audio-toggle" title="Toggle Sound">🔊</button>
+      <button class="icon-btn" id="btn-how-to-play" title="How to Play">❓</button>
+      <button class="icon-btn" id="btn-leave-room" title="Leave Game" style="display: none;">🚪</button>
+    </div>
+  </header>
+
+  <!-- Confetti Canvas for Winners -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- 1. Home Screen -->
+    <section class="screen active" id="screen-home">
+      <div class="hero">
+        <div class="hero-badge">✨ Live Multiplayer & Solo Trivia</div>
+        <h1 class="hero-title">Compete Live In <span>QuizRoom</span></h1>
+        <p class="hero-desc">Play solo practice against the clock or host a real-time multiplayer room with friends using a shareable room code.</p>
+      </div>
+
+      <div class="home-actions">
+        <!-- Solo Practice Card -->
+        <div class="action-card" id="card-solo">
+          <div class="action-icon">🎯</div>
+          <h2 class="action-title">Play Solo</h2>
+          <p class="action-desc">Test your trivia knowledge against the countdown clock. Track accuracy and hone your speed.</p>
+          <div class="action-arrow">Play Practice ➔</div>
+        </div>
+
+        <!-- Create Room Card -->
+        <div class="action-card" id="card-create">
+          <div class="action-icon">👑</div>
+          <h2 class="action-title">Create Room</h2>
+          <p class="action-desc">Host a live game lobby for 2–8 players. Choose category, questions, and invite friends with a code.</p>
+          <div class="action-arrow">Host a Game ➔</div>
+        </div>
+
+        <!-- Join Room Card -->
+        <div class="action-card" id="card-join">
+          <div class="action-icon">🔑</div>
+          <h2 class="action-title">Join Room</h2>
+          <p class="action-desc">Have a 6-character room code from a friend? Enter your nickname and jump straight into the lobby.</p>
+          <div class="action-arrow">Enter Code ➔</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Solo Setup Screen -->
+    <section class="screen" id="screen-solo-setup">
+      <div class="card" style="max-width: 500px;">
+        <div class="back-link" id="solo-back">← Back to Home</div>
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.5rem; font-weight: 800;">Solo Practice Setup</h2>
+        
+        <div class="form-group">
+          <label class="form-label" for="solo-category">Select Category</label>
+          <select class="form-select" id="solo-category">
+            <option value="all">All Categories (Mixed)</option>
+            <option value="general">General Knowledge</option>
+            <option value="science_tech">Science & Technology</option>
+            <option value="pop_culture">Pop Culture & Movies</option>
+            <option value="sports">Sports</option>
+            <option value="geography_history">History & Geography</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="solo-count">Number of Questions</label>
+          <select class="form-select" id="solo-count">
+            <option value="5" selected>5 Questions (Quick)</option>
+            <option value="8">8 Questions (Standard)</option>
+            <option value="12">12 Questions (Marathon)</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" id="btn-start-solo">Start Solo Challenge 🚀</button>
+      </div>
+    </section>
+
+    <!-- 3. Create Room Screen -->
+    <section class="screen" id="screen-create-room">
+      <div class="card" style="max-width: 520px;">
+        <div class="back-link" id="create-back">← Back to Home</div>
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.5rem; font-weight: 800;">Host a Multiplayer Room</h2>
+
+        <div class="form-group">
+          <label class="form-label" for="create-nickname">Your Nickname</label>
+          <input type="text" class="form-input" id="create-nickname" placeholder="e.g. CaptainQuiz" maxlength="16">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Choose Avatar</label>
+          <div class="avatar-picker" id="create-avatar-picker">
+            <div class="avatar-opt selected" data-avatar="🦊">🦊</div>
+            <div class="avatar-opt" data-avatar="🦁">🦁</div>
+            <div class="avatar-opt" data-avatar="🐼">🐼</div>
+            <div class="avatar-opt" data-avatar="🦄">🦄</div>
+            <div class="avatar-opt" data-avatar="🚀">🚀</div>
+            <div class="avatar-opt" data-avatar="⚡">⚡</div>
+            <div class="avatar-opt" data-avatar="🐙">🐙</div>
+            <div class="avatar-opt" data-avatar="👑">👑</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="create-category">Topic Category</label>
+          <select class="form-select" id="create-category">
+            <option value="all">All Categories (Mixed)</option>
+            <option value="general">General Knowledge</option>
+            <option value="science_tech">Science & Technology</option>
+            <option value="pop_culture">Pop Culture & Movies</option>
+            <option value="sports">Sports</option>
+            <option value="geography_history">History & Geography</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="create-count">Question Count</label>
+          <select class="form-select" id="create-count">
+            <option value="5" selected>5 Questions (Fast Pace)</option>
+            <option value="8">8 Questions</option>
+            <option value="10">10 Questions</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" id="btn-create-submit">Generate Room & Lobby ➔</button>
+      </div>
+    </section>
+
+    <!-- 4. Join Room Screen -->
+    <section class="screen" id="screen-join-room">
+      <div class="card" style="max-width: 500px;">
+        <div class="back-link" id="join-back">← Back to Home</div>
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.5rem; font-weight: 800;">Join Game Lobby</h2>
+
+        <div class="form-group">
+          <label class="form-label" for="join-code">6-Character Room Code</label>
+          <input type="text" class="form-input room-code-input" id="join-code" placeholder="AB12CD" maxlength="6" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="join-nickname">Your Nickname</label>
+          <input type="text" class="form-input" id="join-nickname" placeholder="e.g. TriviaMaster" maxlength="16">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Choose Avatar</label>
+          <div class="avatar-picker" id="join-avatar-picker">
+            <div class="avatar-opt selected" data-avatar="🐱">🐱</div>
+            <div class="avatar-opt" data-avatar="🐶">🐶</div>
+            <div class="avatar-opt" data-avatar="🦉">🦉</div>
+            <div class="avatar-opt" data-avatar="🐯">🐯</div>
+            <div class="avatar-opt" data-avatar="🔥">🔥</div>
+            <div class="avatar-opt" data-avatar="💎">💎</div>
+            <div class="avatar-opt" data-avatar="👽">👽</div>
+            <div class="avatar-opt" data-avatar="🎯">🎯</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-join-submit">Enter Room Lobby ➔</button>
+      </div>
+    </section>
+
+    <!-- 5. Lobby Screen -->
+    <section class="screen" id="screen-lobby">
+      <div class="card" style="max-width: 680px;">
+        <div class="lobby-header">
+          <span style="font-size: 0.95rem; font-weight: 700; color: var(--accent-blue);">GAME LOBBY</span>
+          <div class="room-code-badge">
+            <span class="room-code-label">Share This Room Code</span>
+            <div class="room-code-val" id="lobby-room-code">------</div>
+            <div class="code-copy-btns">
+              <button class="mini-btn" id="btn-copy-code">📋 Copy Code</button>
+              <button class="mini-btn" id="btn-copy-link">🔗 Copy Direct Link</button>
+            </div>
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.5rem;" id="lobby-meta-info">
+            Category: <strong id="lobby-category-name">All</strong> • <span id="lobby-q-count">5</span> Questions
+          </div>
+        </div>
+
+        <div class="players-section">
+          <div class="players-title">
+            <span>Joined Players (<span id="lobby-player-count">1</span>/8)</span>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Real-time connected</span>
+          </div>
+          <div class="players-grid" id="lobby-players-grid">
+            <!-- Player chips dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Host controls -->
+        <div id="host-controls" style="margin-top: 2rem;">
+          <button class="btn-primary" id="btn-start-game">Start Game Now 🚀</button>
+          <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.75rem;">
+            You are the host! Start whenever everyone is in the room.
+          </p>
+        </div>
+
+        <!-- Guest status -->
+        <div id="guest-controls" style="margin-top: 2rem; text-align: center; display: none;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+            <div class="avatar-opt" style="animation: pulseBeat 1.5s infinite;">⏳</div>
+            <span style="font-size: 1.1rem; font-weight: 700; color: var(--text-secondary);">Waiting for the host to start the game…</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Countdown Screen -->
+    <section class="screen" id="screen-countdown">
+      <div class="countdown-container">
+        <div class="countdown-number" id="countdown-num">3</div>
+        <div class="countdown-label">Get Ready!</div>
+      </div>
+    </section>
+
+    <!-- 7. Gameplay Screen -->
+    <section class="screen" id="screen-gameplay">
+      <!-- Header -->
+      <div class="game-header">
+        <div class="game-meta">
+          <span class="category-tag" id="game-category-tag">General</span>
+          <span class="question-progress" id="game-progress-text">Q 1 of 5</span>
+        </div>
+
+        <!-- SVG Circular Countdown Timer -->
+        <div class="timer-container">
+          <svg class="timer-svg" viewBox="0 0 72 72">
+            <circle class="timer-circle-bg" cx="36" cy="36" r="32"></circle>
+            <circle class="timer-circle-progress" id="timer-progress" cx="36" cy="36" r="32"></circle>
+          </svg>
+          <div class="timer-text" id="timer-count">15</div>
+        </div>
+
+        <div class="score-display">
+          <span>🏆</span>
+          <span id="player-live-score">0</span>
+          <span id="streak-indicator" style="display: none; font-size: 1rem; color: #f59e0b;">🔥 <span id="streak-count">2</span></span>
+        </div>
+      </div>
+
+      <!-- Question Card -->
+      <div class="question-card">
+        <div class="question-text" id="game-question-text">Loading question...</div>
+        <div class="answer-status-pill" id="game-answer-status">Select your answer before the timer runs out!</div>
+      </div>
+
+      <!-- Kahoot-style 2x2 Answer Grid -->
+      <div class="answers-grid" id="answers-grid">
+        <button class="answer-btn btn-option-0" data-index="0">
+          <div class="shape-badge">▲</div>
+          <div class="answer-text" id="opt-text-0">Option A</div>
+        </button>
+
+        <button class="answer-btn btn-option-1" data-index="1">
+          <div class="shape-badge">◆</div>
+          <div class="answer-text" id="opt-text-1">Option B</div>
+        </button>
+
+        <button class="answer-btn btn-option-2" data-index="2">
+          <div class="shape-badge">●</div>
+          <div class="answer-text" id="opt-text-2">Option C</div>
+        </button>
+
+        <button class="answer-btn btn-option-3" data-index="3">
+          <div class="shape-badge">■</div>
+          <div class="answer-text" id="opt-text-3">Option D</div>
+        </button>
+      </div>
+
+      <!-- Feedback Banner -->
+      <div class="feedback-banner" id="feedback-banner">
+        <span id="feedback-msg">Correct! +850 pts</span>
+      </div>
+    </section>
+
+    <!-- 8. Round Leaderboard Screen -->
+    <section class="screen" id="screen-round-leaderboard">
+      <div class="card" style="max-width: 650px;">
+        <h2 style="font-size: 1.6rem; font-weight: 800; text-align: center; margin-bottom: 0.5rem;">Round Results</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem;" id="round-correct-answer">
+          Correct Answer: <strong style="color: #34d399;">...</strong>
+        </p>
+
+        <!-- Round Leaderboard -->
+        <div class="leaderboard-list" id="round-leaderboard-list">
+          <!-- Dynamically populated rows -->
+        </div>
+
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <button class="btn-primary" id="btn-next-question" style="display: none; max-width: 320px; margin: 0 auto;">Next Question ➔</button>
+          <div id="round-auto-advance" style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem;">
+            Advancing in <span id="intermission-countdown">5</span>s...
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Final Game Over & Podium Screen -->
+    <section class="screen" id="screen-game-over">
+      <div class="card" style="max-width: 720px; text-align: center;">
+        <h2 style="font-size: 2.2rem; font-weight: 900; margin-bottom: 0.25rem;">Final Champions! 🏆</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Game finished! Here are the champions of the room:</p>
+
+        <!-- Podium (1st, 2nd, 3rd) -->
+        <div class="podium-container" id="podium-container">
+          <!-- 2nd Place -->
+          <div class="podium-slot slot-2" id="podium-second">
+            <div class="podium-player">
+              <div class="podium-avatar">🥈</div>
+              <div class="podium-name">Player 2</div>
+              <div class="podium-score">0 pts</div>
+            </div>
+            <div class="podium-pillar">2</div>
+          </div>
+
+          <!-- 1st Place -->
+          <div class="podium-slot slot-1" id="podium-first">
+            <div class="podium-crown">👑</div>
+            <div class="podium-player">
+              <div class="podium-avatar">🥇</div>
+              <div class="podium-name">Winner</div>
+              <div class="podium-score">0 pts</div>
+            </div>
+            <div class="podium-pillar">1</div>
+          </div>
+
+          <!-- 3rd Place -->
+          <div class="podium-slot slot-3" id="podium-third">
+            <div class="podium-player">
+              <div class="podium-avatar">🥉</div>
+              <div class="podium-name">Player 3</div>
+              <div class="podium-score">0 pts</div>
+            </div>
+            <div class="podium-pillar">3</div>
+          </div>
+        </div>
+
+        <!-- Full Rankings List -->
+        <div class="leaderboard-list" id="final-leaderboard-list" style="margin-bottom: 2rem;">
+          <!-- All players rows -->
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <button class="btn-primary" id="btn-play-again" style="max-width: 240px; display: none;">🔄 Play Again</button>
+          <button class="btn-secondary" id="btn-final-home" style="max-width: 240px;">🏠 Back to Home</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Solo Results Screen -->
+    <section class="screen" id="screen-solo-results">
+      <div class="card" style="max-width: 580px; text-align: center;">
+        <div style="font-size: 4rem; margin-bottom: 0.5rem;" id="solo-result-icon">🎉</div>
+        <h2 style="font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem;" id="solo-result-heading">Challenge Complete!</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">Here is how you performed in solo practice:</p>
+
+        <div class="stats-summary">
+          <div class="stat-item">
+            <div class="stat-val" id="solo-final-score">0</div>
+            <div class="stat-lbl">Total Score</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" id="solo-final-accuracy">0%</div>
+            <div class="stat-lbl">Accuracy</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" id="solo-best-streak">0</div>
+            <div class="stat-lbl">Best Streak</div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <button class="btn-primary" id="btn-solo-retry" style="max-width: 220px;">Play Again 🔄</button>
+          <button class="btn-secondary" id="btn-solo-home" style="max-width: 220px;">Back to Home 🏠</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- How to Play Modal -->
+  <div class="modal-overlay" id="how-to-play-modal">
+    <div class="modal-content">
+      <h3 class="modal-title">How to Play QuizRoom 💡</h3>
+      <div class="modal-body">
+        <p><strong>Modes:</strong></p>
+        <ul>
+          <li><strong>Solo Mode:</strong> Practice answering questions against the clock to build knowledge and speed.</li>
+          <li><strong>Room Multiplayer:</strong> Host a live game room with up to 8 players. Share the 6-character room code or link to let friends join.</li>
+        </ul>
+        <p style="margin-top: 1rem;"><strong>Scoring Rules:</strong></p>
+        <ul>
+          <li>Correct answers earn up to <strong>1,000 points</strong> per question.</li>
+          <li><strong>Speed matters:</strong> The faster you pick the correct answer, the more points you receive!</li>
+          <li><strong>Streak Bonuses:</strong> Consecutive correct answers award extra bonus points!</li>
+        </ul>
+      </div>
+      <button class="btn-primary" id="btn-close-modal">Got it!</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Synthesizer Audio -->
+  <script src="js/audio.js"></script>
+  <!-- Main Application Logic -->
+  <script src="js/quiz-app.js"></script>
+</body>
+</html>
