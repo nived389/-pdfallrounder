@@ -734,11 +734,82 @@ body {
   width: 60px;
 }
 
+.ribbon-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ribbon-toggle {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  min-width: 24px;
+}
+
+.ribbon-toggle.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.ribbon-checkbox-lbl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ribbon-checkbox-lbl input {
+  cursor: pointer;
+}
+
 .zoom-indicator {
   font-size: 11px;
   font-family: var(--font-mono);
   width: 40px;
   text-align: center;
+}
+
+.canvas-text-overlay {
+  position: absolute;
+  z-index: 100;
+  background: #ffffff;
+  border: 2px dashed #3b82f6;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  padding: 6px;
+  min-width: 220px;
+}
+
+.canvas-text-overlay textarea {
+  width: 100%;
+  min-height: 50px;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  resize: both;
+  background: transparent;
+  color: #0f172a;
+}
+
+.text-overlay-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .studio-right {

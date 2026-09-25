@@ -24,8 +24,10 @@ class OmniConvertApp {
     
     // Annotations Map: pageNum -> Array of annotation objects
     this.pageAnnotations = new Map();
+    this.pageRedo = new Map();
     this.isDrawing = false;
     this.currentPath = null;
+    this.pendingTextCoord = null;
     this.currentUser = null;
 
     this.initSocket();
@@ -226,6 +228,33 @@ class OmniConvertApp {
       });
     });
 
+    // Action 0: Open PDF Studio directly
+    const openPdfStudioBtn = document.getElementById('btn-open-pdf-studio');
+    if (openPdfStudioBtn) {
+      openPdfStudioBtn.addEventListener('click', () => {
+        const fileToOpen = this.selectedIds.size > 0 
+          ? this.files.find(f => this.selectedIds.has(f.id))
+          : this.files[0];
+        if (fileToOpen) {
+          this.openViewer(fileToOpen.id);
+        } else {
+          this.loadSamples(4).then(() => {
+            if (this.files[0]) this.openViewer(this.files[0].id);
+          });
+        }
+      });
+    }
+
+    // Text formatting toggles
+    const boldBtn = document.getElementById('btn-text-bold');
+    if (boldBtn) {
+      boldBtn.addEventListener('click', () => boldBtn.classList.toggle('active'));
+    }
+    const italicBtn = document.getElementById('btn-text-italic');
+    if (italicBtn) {
+      italicBtn.addEventListener('click', () => italicBtn.classList.toggle('active'));
+    }
+
     // Studio Ribbon Tools
     document.querySelectorAll('.ribbon-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -246,6 +275,9 @@ class OmniConvertApp {
           this.insertStamp();
         } else if (this.currentTool === 'watermark') {
           this.applyWatermark();
+        } else if (this.currentTool === 'image') {
+          const picker = document.getElementById('studio-image-picker');
+          if (picker) picker.click();
         }
       });
     });
@@ -266,10 +298,14 @@ class OmniConvertApp {
     document.getElementById('btn-prev-page').addEventListener('click', () => this.changePage(-1));
     document.getElementById('btn-next-page').addEventListener('click', () => this.changePage(1));
     document.getElementById('btn-rotate-cw').addEventListener('click', () => this.rotatePage(90));
+    document.getElementById('btn-rotate-ccw').addEventListener('click', () => this.rotatePage(-90));
     document.getElementById('btn-add-blank').addEventListener('click', () => this.addBlankPage());
+    document.getElementById('btn-duplicate-page').addEventListener('click', () => this.duplicatePage());
     document.getElementById('btn-delete-page').addEventListener('click', () => this.deleteCurrentPage());
     document.getElementById('btn-undo-draw').addEventListener('click', () => this.undoDraw());
+    document.getElementById('btn-redo-draw').addEventListener('click', () => this.redoDraw());
     document.getElementById('btn-clear-draw').addEventListener('click', () => this.clearDraw());
+    document.getElementById('btn-print-pdf').addEventListener('click', () => this.printViewerPDF());
 
     // Studio Zoom & Night Mode
     document.getElementById('btn-zoom-in').addEventListener('click', () => this.zoom(0.15));
@@ -278,11 +314,32 @@ class OmniConvertApp {
 
     // Studio Save & Export
     document.getElementById('btn-editor-save').addEventListener('click', () => this.saveViewerPDF());
+    document.getElementById('btn-editor-export-png').addEventListener('click', () => this.exportViewerPNG());
     document.getElementById('btn-editor-download-raw').addEventListener('click', () => {
       if (this.currentViewerFile) {
         window.location.href = this.currentViewerFile.downloadUrl;
       }
     });
+
+    // Inline Text Overlay Buttons
+    const applyTextBtn = document.getElementById('btn-apply-text-box');
+    if (applyTextBtn) {
+      applyTextBtn.addEventListener('click', () => this.applyInlineTextBox());
+    }
+    const cancelTextBtn = document.getElementById('btn-cancel-text-box');
+    if (cancelTextBtn) {
+      cancelTextBtn.addEventListener('click', () => this.hideInlineTextBox());
+    }
+
+    // Image Picker
+    const imgPicker = document.getElementById('studio-image-picker');
+    if (imgPicker) {
+      imgPicker.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          this.handleImageInsert(e.target.files[0]);
+        }
+      });
+    }
 
     // Canvas drawing setup
     this.initCanvasDrawing();
@@ -725,41 +782,44 @@ class OmniConvertApp {
       const y = (e.clientY - rect.top) / this.viewerZoom;
 
       if (this.currentTool === 'text') {
-        const text = prompt('Enter text note:', 'Sample Note');
-        if (text && text.trim()) {
-          this.getPageAnnotations().push({
-            tool: 'text',
-            text: text.trim(),
+        this.showInlineTextBox(e.clientX - rect.left, e.clientY - rect.top, x, y);
+        return;
+      }
+
+      if (this.currentTool === 'note') {
+        const note = prompt('Enter Sticky Note comment:', 'Review document section') || 'Note';
+        if (note && note.trim()) {
+          this.recordAction({
+            tool: 'note',
+            text: note.trim(),
             x,
-            y,
-            color: this.currentColor,
-            size: 16
+            y
           });
           this.redrawDrawCanvas();
         }
         return;
       }
 
-      if (this.currentTool === 'shape') {
-        this.getPageAnnotations().push({
-          tool: 'shape',
-          x,
-          y,
-          width: 130,
-          height: 70,
-          color: this.currentColor
-        });
-        this.redrawDrawCanvas();
-        return;
-      }
-
       this.isDrawing = true;
-      this.currentPath = {
-        tool: this.currentTool,
-        color: this.currentColor,
-        size: this.currentStrokeSize,
-        points: [{ x, y }]
-      };
+      if (['line', 'arrow', 'rect', 'circle', 'whiteout', 'redact'].includes(this.currentTool)) {
+        this.currentPath = {
+          tool: this.currentTool,
+          startX: x,
+          startY: y,
+          endX: x,
+          endY: y,
+          color: this.currentColor,
+          size: this.currentStrokeSize
+        };
+      } else {
+        const isEraser = this.currentTool === 'eraser';
+        this.currentPath = {
+          tool: this.currentTool,
+          color: isEraser ? '#ffffff' : this.currentColor,
+          size: isEraser ? Math.max(16, this.currentStrokeSize * 2.5) : this.currentStrokeSize,
+          points: [{ x, y }]
+        };
+      }
     });
 
     drawCanvas.addEventListener('mousemove', (e) => {
@@ -767,27 +827,122 @@ class OmniConvertApp {
       const rect = drawCanvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) / this.viewerZoom;
       const y = (e.clientY - rect.top) / this.viewerZoom;
-      this.currentPath.points.push({ x, y });
+
+      if (this.currentPath.points) {
+        this.currentPath.points.push({ x, y });
+      } else {
+        this.currentPath.endX = x;
+        this.currentPath.endY = y;
+      }
       this.redrawDrawCanvas();
     });
 
-    drawCanvas.addEventListener('mouseup', () => {
+    const finishDrawing = () => {
       if (this.isDrawing && this.currentPath) {
         this.isDrawing = false;
-        this.getPageAnnotations().push(this.currentPath);
+        this.recordAction(this.currentPath);
         this.currentPath = null;
         this.redrawDrawCanvas();
       }
-    });
+    };
 
-    drawCanvas.addEventListener('mouseleave', () => {
-      if (this.isDrawing && this.currentPath) {
-        this.isDrawing = false;
-        this.getPageAnnotations().push(this.currentPath);
-        this.currentPath = null;
+    drawCanvas.addEventListener('mouseup', finishDrawing);
+    drawCanvas.addEventListener('mouseleave', finishDrawing);
+  }
+
+  recordAction(action) {
+    this.getPageAnnotations().push(action);
+    this.pageRedo.set(this.viewerCurrentPage, []);
+  }
+
+  showInlineTextBox(clientX, clientY, canvasX, canvasY) {
+    const overlay = document.getElementById('canvas-text-overlay');
+    const textarea = document.getElementById('inline-text-editor');
+    if (!overlay || !textarea) return;
+
+    overlay.style.left = `${clientX}px`;
+    overlay.style.top = `${clientY}px`;
+    overlay.style.display = 'block';
+
+    const fontFamily = document.getElementById('text-font-family').value;
+    const fontSize = document.getElementById('text-font-size').value;
+    const isBold = document.getElementById('btn-text-bold').classList.contains('active');
+    const isItalic = document.getElementById('btn-text-italic').classList.contains('active');
+
+    textarea.style.fontFamily = fontFamily;
+    textarea.style.fontSize = `${fontSize}px`;
+    textarea.style.fontWeight = isBold ? 'bold' : 'normal';
+    textarea.style.fontStyle = isItalic ? 'italic' : 'normal';
+    textarea.style.color = this.currentColor;
+    textarea.value = '';
+    textarea.focus();
+
+    this.pendingTextCoord = { x: canvasX, y: canvasY };
+  }
+
+  applyInlineTextBox() {
+    const overlay = document.getElementById('canvas-text-overlay');
+    const textarea = document.getElementById('inline-text-editor');
+    if (!this.pendingTextCoord || !textarea) return;
+
+    const text = textarea.value.trim();
+    if (text) {
+      const fontFamily = document.getElementById('text-font-family').value;
+      const fontSize = parseInt(document.getElementById('text-font-size').value) || 16;
+      const isBold = document.getElementById('btn-text-bold').classList.contains('active');
+      const isItalic = document.getElementById('btn-text-italic').classList.contains('active');
+      const maskBg = document.getElementById('chk-text-whiteout').checked;
+
+      this.recordAction({
+        tool: 'text',
+        text,
+        x: this.pendingTextCoord.x,
+        y: this.pendingTextCoord.y + fontSize,
+        fontFamily,
+        fontSize,
+        bold: isBold,
+        italic: isItalic,
+        color: this.currentColor,
+        maskBg
+      });
+      this.redrawDrawCanvas();
+      this.showToast('Text note added to PDF');
+    }
+
+    this.hideInlineTextBox();
+  }
+
+  hideInlineTextBox() {
+    const overlay = document.getElementById('canvas-text-overlay');
+    if (overlay) overlay.style.display = 'none';
+    this.pendingTextCoord = null;
+  }
+
+  handleImageInsert(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width;
+        let h = img.height;
+        if (w > 200) {
+          h = Math.round((200 / w) * h);
+          w = 200;
+        }
+        this.recordAction({
+          tool: 'image',
+          img,
+          x: 100,
+          y: 150,
+          width: w,
+          height: h
+        });
         this.redrawDrawCanvas();
-      }
-    });
+        this.showToast('Image inserted onto PDF');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 
   getPageAnnotations() {
@@ -809,29 +964,128 @@ class OmniConvertApp {
     if (this.currentPath) items.push(this.currentPath);
 
     items.forEach(item => {
-      if (item.points && item.points.length > 1) {
-        ctx.beginPath();
-        ctx.moveTo(item.points[0].x, item.points[0].y);
-        for (let i = 1; i < item.points.length; i++) {
-          ctx.lineTo(item.points[i].x, item.points[i].y);
-        }
-        if (item.tool === 'highlight') {
-          ctx.strokeStyle = item.color || '#facc15';
-          ctx.lineWidth = (item.size || 6) * 3;
-          ctx.globalAlpha = 0.35;
-        } else {
-          ctx.strokeStyle = item.color || '#ef4444';
-          ctx.lineWidth = item.size || 4;
+      if (item.tool === 'draw' || item.tool === 'highlight' || item.tool === 'eraser') {
+        if (item.points && item.points.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(item.points[0].x, item.points[0].y);
+          for (let i = 1; i < item.points.length; i++) {
+            ctx.lineTo(item.points[i].x, item.points[i].y);
+          }
+          if (item.tool === 'highlight') {
+            ctx.strokeStyle = item.color || '#facc15';
+            ctx.lineWidth = (item.size || 6) * 3;
+            ctx.globalAlpha = 0.35;
+          } else if (item.tool === 'eraser') {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = item.size || 20;
+            ctx.globalAlpha = 1.0;
+          } else {
+            ctx.strokeStyle = item.color || '#ef4444';
+            ctx.lineWidth = item.size || 4;
+            ctx.globalAlpha = 1.0;
+          }
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.stroke();
           ctx.globalAlpha = 1.0;
         }
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+      } else if (item.tool === 'whiteout') {
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        const minX = Math.min(item.startX, item.endX);
+        const minY = Math.min(item.startY, item.endY);
+        const w = Math.abs(item.endX - item.startX);
+        const h = Math.abs(item.endY - item.startY);
+        ctx.fillRect(minX, minY, w, h);
+        ctx.restore();
+      } else if (item.tool === 'redact') {
+        ctx.save();
+        ctx.fillStyle = '#0f172a';
+        const minX = Math.min(item.startX, item.endX);
+        const minY = Math.min(item.startY, item.endY);
+        const w = Math.abs(item.endX - item.startX);
+        const h = Math.abs(item.endY - item.startY);
+        ctx.fillRect(minX, minY, w, h);
+        ctx.restore();
+      } else if (item.tool === 'line') {
+        ctx.save();
+        ctx.strokeStyle = item.color || '#ef4444';
+        ctx.lineWidth = item.size || 3;
+        ctx.beginPath();
+        ctx.moveTo(item.startX, item.startY);
+        ctx.lineTo(item.endX, item.endY);
         ctx.stroke();
+        ctx.restore();
+      } else if (item.tool === 'arrow') {
+        ctx.save();
+        ctx.strokeStyle = item.color || '#ef4444';
+        ctx.fillStyle = item.color || '#ef4444';
+        ctx.lineWidth = item.size || 3;
+        ctx.beginPath();
+        ctx.moveTo(item.startX, item.startY);
+        ctx.lineTo(item.endX, item.endY);
+        ctx.stroke();
+
+        const angle = Math.atan2(item.endY - item.startY, item.endX - item.startX);
+        const headlen = 14;
+        ctx.beginPath();
+        ctx.moveTo(item.endX, item.endY);
+        ctx.lineTo(item.endX - headlen * Math.cos(angle - Math.PI / 6), item.endY - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(item.endX - headlen * Math.cos(angle + Math.PI / 6), item.endY - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      } else if (item.tool === 'rect') {
+        ctx.save();
+        ctx.strokeStyle = item.color || '#ef4444';
+        ctx.lineWidth = item.size || 2.5;
+        const minX = Math.min(item.startX, item.endX);
+        const minY = Math.min(item.startY, item.endY);
+        const w = Math.abs(item.endX - item.startX);
+        const h = Math.abs(item.endY - item.startY);
+        ctx.strokeRect(minX, minY, w, h);
+        ctx.restore();
+      } else if (item.tool === 'circle') {
+        ctx.save();
+        ctx.strokeStyle = item.color || '#ef4444';
+        ctx.lineWidth = item.size || 2.5;
+        const cx = (item.startX + item.endX) / 2;
+        const cy = (item.startY + item.endY) / 2;
+        const rx = Math.abs(item.endX - item.startX) / 2;
+        const ry = Math.abs(item.endY - item.startY) / 2;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, Math.max(1, rx), Math.max(1, ry), 0, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.restore();
+      } else if (item.tool === 'note') {
+        ctx.save();
+        ctx.fillStyle = '#fef08a';
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(item.x, item.y, 160, 60);
+        ctx.strokeRect(item.x, item.y, 160, 60);
+        ctx.font = "bold 11px 'Inter', sans-serif";
+        ctx.fillStyle = '#854d0e';
+        ctx.fillText("📌 Sticky Note", item.x + 8, item.y + 16);
+        ctx.font = "12px 'Inter', sans-serif";
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText(item.text, item.x + 8, item.y + 38, 144);
+        ctx.restore();
       } else if (item.tool === 'text') {
         ctx.save();
-        ctx.font = `bold ${item.size || 16}px 'Inter', sans-serif`;
+        const fontStr = `${item.italic ? 'italic ' : ''}${item.bold ? 'bold ' : ''}${item.fontSize || 16}px ${item.fontFamily || "'Inter', sans-serif"}`;
+        ctx.font = fontStr;
+        if (item.maskBg) {
+          const metrics = ctx.measureText(item.text);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(item.x - 4, item.y - (item.fontSize || 16), metrics.width + 8, (item.fontSize || 16) * 1.3);
+        }
         ctx.fillStyle = item.color || '#ef4444';
         ctx.fillText(item.text, item.x, item.y);
+        ctx.restore();
+      } else if (item.tool === 'image' && item.img) {
+        ctx.save();
+        ctx.drawImage(item.img, item.x, item.y, item.width, item.height);
         ctx.restore();
       } else if (item.tool === 'signature') {
         ctx.save();
@@ -869,12 +1123,6 @@ class OmniConvertApp {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(item.text || 'CONFIDENTIAL', 0, 0);
-        ctx.restore();
-      } else if (item.tool === 'shape') {
-        ctx.save();
-        ctx.strokeStyle = item.color || '#ef4444';
-        ctx.lineWidth = 2.5;
-        ctx.strokeRect(item.x, item.y, item.width, item.height);
         ctx.restore();
       }
     });
@@ -992,13 +1240,60 @@ class OmniConvertApp {
   undoDraw() {
     const list = this.getPageAnnotations();
     if (list.length) {
-      list.pop();
+      const popped = list.pop();
+      if (!this.pageRedo.has(this.viewerCurrentPage)) {
+        this.pageRedo.set(this.viewerCurrentPage, []);
+      }
+      this.pageRedo.get(this.viewerCurrentPage).push(popped);
       this.redrawDrawCanvas();
     }
   }
 
+  redoDraw() {
+    if (!this.pageRedo.has(this.viewerCurrentPage)) return;
+    const redoList = this.pageRedo.get(this.viewerCurrentPage);
+    if (redoList && redoList.length) {
+      const item = redoList.pop();
+      this.getPageAnnotations().push(item);
+      this.redrawDrawCanvas();
+    }
+  }
+
+  duplicatePage() {
+    this.viewerTotalPages++;
+    const currentAnnots = [...this.getPageAnnotations()];
+    this.viewerCurrentPage = this.viewerTotalPages;
+    this.pageAnnotations.set(this.viewerCurrentPage, currentAnnots.filter(a => a.tool !== 'image').map(a => Object.assign({}, a)));
+    document.getElementById('viewer-page-info').textContent = `Page ${this.viewerCurrentPage} of ${this.viewerTotalPages}`;
+    this.renderStudioThumbnails();
+    this.renderViewerCanvas();
+    this.showToast('Duplicated page appended');
+  }
+
+  printViewerPDF() {
+    window.print();
+  }
+
+  exportViewerPNG() {
+    const baseCanvas = document.getElementById('view-base-canvas');
+    const drawCanvas = document.getElementById('view-draw-canvas');
+    const merged = document.createElement('canvas');
+    merged.width = baseCanvas.width;
+    merged.height = baseCanvas.height;
+    const ctx = merged.getContext('2d');
+    ctx.drawImage(baseCanvas, 0, 0);
+    ctx.drawImage(drawCanvas, 0, 0);
+
+    const a = document.createElement('a');
+    a.download = `Page_${this.viewerCurrentPage}_Export.png`;
+    a.href = merged.toDataURL('image/png');
+    a.click();
+    this.showToast('Exported page as high-res PNG');
+  }
+
   clearDraw() {
     this.pageAnnotations.set(this.viewerCurrentPage, []);
+    this.pageRedo.set(this.viewerCurrentPage, []);
     this.redrawDrawCanvas();
     this.showToast('Cleared page annotations');
   }

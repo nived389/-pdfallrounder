@@ -123,6 +123,12 @@
         </div>
 
         <div class="action-buttons">
+          <!-- Action 0: Direct PDF Editor -->
+          <button class="btn btn-secondary" id="btn-open-pdf-studio" title="Open PDF Editor & Tools">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            Edit PDF Studio
+          </button>
+
           <!-- Action 1: Advanced Merge into 1 PDF -->
           <button class="btn btn-primary" id="btn-merge-action">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="13" height="13" rx="2"></rect><path d="M5 8v10a2 2 0 0 0 2 2h10"></path></svg>
@@ -358,16 +364,56 @@
 
         <!-- Tool Ribbon -->
         <div class="studio-ribbon">
-          <!-- Tools -->
+          <!-- Primary Tools -->
           <div class="ribbon-group">
-            <button class="ribbon-btn active" data-tool="view" id="tool-view" title="Browse / Read">👁 View</button>
-            <button class="ribbon-btn" data-tool="draw" id="tool-draw" title="Draw / Sign">✏️ Draw</button>
-            <button class="ribbon-btn" data-tool="highlight" id="tool-highlight" title="Highlighter">🖍️ Highlight</button>
-            <button class="ribbon-btn" data-tool="text" id="tool-text" title="Add Note / Text">🔤 Text Note</button>
-            <button class="ribbon-btn" data-tool="signature" id="tool-signature" title="Insert Digital Signature">✍️ Sign</button>
-            <button class="ribbon-btn" data-tool="stamp" id="tool-stamp" title="Add Stamp">🏷️ Stamp</button>
-            <button class="ribbon-btn" data-tool="watermark" id="tool-watermark" title="Diagonal Watermark">💧 Watermark</button>
-            <button class="ribbon-btn" data-tool="shape" id="tool-shape" title="Rectangle Box">📐 Shape</button>
+            <button class="ribbon-btn active" data-tool="view" id="tool-view" title="Browse / Pan">👁 View</button>
+            <button class="ribbon-btn" data-tool="text" id="tool-text" title="Click anywhere to type or edit text">🔤 Text Editor</button>
+            <button class="ribbon-btn" data-tool="draw" id="tool-draw" title="Pencil / Freehand Draw">✏️ Pen</button>
+            <button class="ribbon-btn" data-tool="highlight" id="tool-highlight" title="Highlighter marker">🖍️ Highlight</button>
+            <button class="ribbon-btn" data-tool="eraser" id="tool-eraser" title="Cleanly erase content or annotations">🧹 Eraser</button>
+            <button class="ribbon-btn" data-tool="whiteout" id="tool-whiteout" title="Whiteout block to conceal text">⬜ Whiteout</button>
+            <button class="ribbon-btn" data-tool="redact" id="tool-redact" title="Blackout redact box for PII / sensitive data">⬛ Redact</button>
+            <button class="ribbon-btn" data-tool="line" id="tool-line" title="Straight line">📏 Line</button>
+            <button class="ribbon-btn" data-tool="arrow" id="tool-arrow" title="Directional arrow">➔ Arrow</button>
+            <button class="ribbon-btn" data-tool="rect" id="tool-rect" title="Rectangle outline">🔲 Box</button>
+            <button class="ribbon-btn" data-tool="circle" id="tool-circle" title="Circle outline">⭕ Circle</button>
+            <button class="ribbon-btn" data-tool="note" id="tool-note" title="Sticky note comment">💬 Note</button>
+            <button class="ribbon-btn" data-tool="signature" id="tool-signature" title="Insert handwritten digital signature">✍️ Sign</button>
+            <button class="ribbon-btn" data-tool="stamp" id="tool-stamp" title="Library of official stamps">🏷️ Stamp</button>
+            <button class="ribbon-btn" data-tool="watermark" id="tool-watermark" title="Diagonal document watermark">💧 Watermark</button>
+            <button class="ribbon-btn" data-tool="image" id="tool-image" title="Insert logo or image onto page">🖼️ Insert Image</button>
+          </div>
+
+          <div class="ribbon-sep"></div>
+
+          <!-- Text Formatting Toolbar (Shows when text tool is active) -->
+          <div class="ribbon-group" id="ribbon-text-controls">
+            <select id="text-font-family" class="ribbon-select" title="Font Family">
+              <option value="'Inter', sans-serif">Inter</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="'Times New Roman', serif">Times</option>
+              <option value="'Courier New', monospace">Courier</option>
+              <option value="'JetBrains Mono', monospace">JetBrains</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="Impact, sans-serif">Impact</option>
+            </select>
+
+            <select id="text-font-size" class="ribbon-select" title="Font Size">
+              <option value="12">12px</option>
+              <option value="14">14px</option>
+              <option value="16" selected>16px</option>
+              <option value="18">18px</option>
+              <option value="22">22px</option>
+              <option value="28">28px</option>
+              <option value="36">36px</option>
+            </select>
+
+            <button class="ribbon-toggle" id="btn-text-bold" title="Bold"><b>B</b></button>
+            <button class="ribbon-toggle" id="btn-text-italic" title="Italic"><i>I</i></button>
+            <label class="ribbon-checkbox-lbl" title="Mask existing background behind text">
+              <input type="checkbox" id="chk-text-whiteout" />
+              <span>Mask BG</span>
+            </label>
           </div>
 
           <div class="ribbon-sep"></div>
@@ -375,8 +421,8 @@
           <!-- Color & Size Controls -->
           <div class="ribbon-group" id="ribbon-brush-controls">
             <input type="color" id="studio-color-picker" value="#ef4444" title="Stroke / Text Color" />
-            <div class="size-pill">
-              <input type="range" id="studio-size-slider" min="2" max="24" value="4" />
+            <div class="size-pill" title="Stroke / Eraser Width">
+              <input type="range" id="studio-size-slider" min="2" max="48" value="4" />
               <span id="studio-size-val">4px</span>
             </div>
           </div>
@@ -385,11 +431,15 @@
 
           <!-- Page Operations -->
           <div class="ribbon-group">
-            <button class="ribbon-btn-sm" id="btn-rotate-cw" title="Rotate Page 90° Clockwise">↻ Rotate</button>
+            <button class="ribbon-btn-sm" id="btn-rotate-cw" title="Rotate 90° Clockwise">↻ 90°</button>
+            <button class="ribbon-btn-sm" id="btn-rotate-ccw" title="Rotate 90° Counter-Clockwise">↺ 90°</button>
             <button class="ribbon-btn-sm" id="btn-add-blank" title="Add Blank Page">+ Blank</button>
+            <button class="ribbon-btn-sm" id="btn-duplicate-page" title="Duplicate Page">📋 Clone</button>
             <button class="ribbon-btn-sm" id="btn-delete-page" title="Delete Current Page">🗑 Del</button>
-            <button class="ribbon-btn-sm" id="btn-undo-draw" title="Undo">↩ Undo</button>
-            <button class="ribbon-btn-sm" id="btn-clear-draw" title="Clear">Clear</button>
+            <button class="ribbon-btn-sm" id="btn-undo-draw" title="Undo (Ctrl+Z)">↩ Undo</button>
+            <button class="ribbon-btn-sm" id="btn-redo-draw" title="Redo (Ctrl+Y)">↪ Redo</button>
+            <button class="ribbon-btn-sm" id="btn-clear-draw" title="Clear page annotations">Clear</button>
+            <button class="ribbon-btn-sm" id="btn-print-pdf" title="Print document">🖨️ Print</button>
           </div>
 
           <div class="ribbon-sep"></div>
@@ -404,8 +454,9 @@
         </div>
 
         <div class="studio-right">
-          <button class="btn btn-secondary btn-sm" id="btn-editor-download-raw">⬇ Download Original</button>
-          <button class="btn btn-primary btn-sm" id="btn-editor-save">Save & Download</button>
+          <button class="btn btn-secondary btn-sm" id="btn-editor-download-raw">⬇ Original</button>
+          <button class="btn btn-secondary btn-sm" id="btn-editor-export-png">🖼 PNG</button>
+          <button class="btn btn-primary btn-sm" id="btn-editor-save">💾 Save & Download</button>
           <button class="btn-close" onclick="app.closeModals()">✕</button>
         </div>
       </div>
@@ -423,6 +474,18 @@
             <div class="canvas-wrapper" id="canvas-wrapper">
               <canvas id="view-base-canvas" width="700" height="950"></canvas>
               <canvas id="view-draw-canvas" width="700" height="950"></canvas>
+
+              <!-- In-place Click-to-Type Text Editor Overlay -->
+              <div id="canvas-text-overlay" class="canvas-text-overlay" style="display: none;">
+                <textarea id="inline-text-editor" placeholder="Click and type your text here..."></textarea>
+                <div class="text-overlay-bar">
+                  <button id="btn-apply-text-box" class="btn btn-xs btn-primary">✓ Apply Text</button>
+                  <button id="btn-cancel-text-box" class="btn btn-xs btn-ghost">✕ Cancel</button>
+                </div>
+              </div>
+
+              <!-- Hidden image input for image insert tool -->
+              <input type="file" id="studio-image-picker" accept="image/png, image/jpeg, image/webp" style="display: none;" />
             </div>
           </div>
 
