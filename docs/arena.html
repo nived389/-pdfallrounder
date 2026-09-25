@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ArenaClash — Real-Time Multiplayer Action Arena</title>
+  <link rel="stylesheet" href="css/arena.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+</head>
+<body class="arena-body">
+
+  <!-- Navigation bar -->
+  <nav class="arena-nav">
+    <div class="arena-brand" id="arena-logo">
+      <span>⚔️</span>
+      <span>ArenaClash</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <a href="/" class="game-hub-badge" title="Switch to QuizRoom">⚡ Play QuizRoom</a>
+      <button class="game-hub-badge" id="btn-arena-audio" style="cursor: pointer;">🔊</button>
+    </div>
+  </nav>
+
+  <!-- Screens Container -->
+  <div class="arena-screens">
+
+    <!-- 1. Home Screen -->
+    <section class="screen-view active" id="screen-arena-home">
+      <div class="arena-card" style="text-align: center;">
+        <span class="hero-tag">🔥 2D REAL-TIME MULTIPLAYER ACTION</span>
+        <h1 class="arena-title">Enter The <span>Arena</span></h1>
+        <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6; max-width: 540px; margin: 0 auto;">
+          Move, aim, dodge, and blast opponents in real-time combat. Battle solo against AI bots or host a live 2–8 player showdown with friends.
+        </p>
+
+        <div class="mode-grid">
+          <!-- Solo Practice -->
+          <div class="mode-card" id="card-arena-solo">
+            <div class="mode-icon">🤖</div>
+            <div class="mode-name">Solo vs Bots</div>
+            <div class="mode-desc">Sharpen your combat skills against AI opponents with adjustable difficulty.</div>
+          </div>
+
+          <!-- Create Room -->
+          <div class="mode-card" id="card-arena-create">
+            <div class="mode-icon">👑</div>
+            <div class="mode-name">Create Room</div>
+            <div class="mode-desc">Host an online multiplayer arena with a shareable 6-character room code.</div>
+          </div>
+
+          <!-- Join Room -->
+          <div class="mode-card" id="card-arena-join">
+            <div class="mode-icon">🔑</div>
+            <div class="mode-name">Join Room</div>
+            <div class="mode-desc">Enter your room code to jump straight into a friend's active combat lobby.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Solo Setup Screen -->
+    <section class="screen-view" id="screen-arena-solo-setup">
+      <div class="arena-card" style="max-width: 500px;">
+        <div class="back-btn" id="solo-back-btn">← Back to Menu</div>
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.25rem; font-weight: 800;">Solo Bot Skirmish</h2>
+
+        <div class="arena-form-group">
+          <label class="arena-label" for="solo-difficulty">AI Difficulty</label>
+          <select class="arena-select" id="solo-difficulty">
+            <option value="easy">Recruit (Easy — relaxed reaction)</option>
+            <option value="medium" selected>Veteran (Medium — tactical & aggressive)</option>
+            <option value="hard">Cybernetic (Hard — dodging & powerup hunting)</option>
+          </select>
+        </div>
+
+        <div class="arena-form-group">
+          <label class="arena-label" for="solo-map">Arena Map</label>
+          <select class="arena-select" id="solo-map">
+            <option value="cyber" selected>Cyber Grid (Neon pillars & open flanks)</option>
+            <option value="bunker">Bunker Ruins (Tactical choke points)</option>
+            <option value="colosseum">Colosseum (Corner shields & central ring)</option>
+          </select>
+        </div>
+
+        <button class="btn-arena" id="btn-start-solo-match">Deploy into Combat 🚀</button>
+      </div>
+    </section>
+
+    <!-- 3. Create Room Screen -->
+    <section class="screen-view" id="screen-arena-create">
+      <div class="arena-card" style="max-width: 520px;">
+        <div class="back-btn" id="create-back-btn">← Back to Menu</div>
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.25rem; font-weight: 800;">Host Multiplayer Arena</h2>
+
+        <div class="arena-form-group">
+          <label class="arena-label" for="arena-create-nickname">Your Call-sign / Nickname</label>
+          <input type="text" class="arena-input" id="arena-create-nickname" placeholder="e.g. ShadowBlade" maxlength="16">
+        </div>
+
+        <div class="arena-form-group">
+          <label class="arena-label">Combat Chassis Skin</label>
+          <div class="skin-picker">
+            <div class="skin-circle selected" data-skin="#06b6d4" style="background:#06b6d4;"></div>
+            <div class="skin-circle" data-skin="#ef4444" style="background:#ef4444;"></div>
+            <div class="skin-circle" data-skin="#10b981" style="background:#10b981;"></div>
+            <div class="skin-circle" data-skin="#f59e0b" style="background:#f59e0b;"></div>
+            <div class="skin-circle" data-skin="#a855f7" style="background:#a855f7;"></div>
+            <div class="skin-circle" data-skin="#f97316" style="background:#f97316;"></div>
+          </div>
+        </div>
+
+        <div class="arena-form-group">
+          <label class="arena-label" for="arena-create-map">Arena Map</label>
+          <select class="arena-select" id="arena-create-map">
+            <option value="cyber" selected>Cyber Grid</option>
+            <option value="bunker">Bunker Ruins</option>
+            <option value="colosseum">Colosseum</option>
+          </select>
+        </div>
+
+        <div class="arena-form-group">
+          <label class="arena-label" for="arena-create-type">Match Rule</label>
+          <select class="arena-select" id="arena-create-type">
+            <option value="LastManStanding" selected>Last Man Standing (Survival)</option>
+            <option value="KillRace">Kill Race (First to 8 Kills)</option>
+            <option value="TimedDeathmatch">Timed Deathmatch (90 Seconds)</option>
+          </select>
+        </div>
+
+        <button class="btn-arena" id="btn-create-arena-submit">Generate Arena Lobby ➔</button>
+      </div>
+    </section>
+
+    <!-- 4. Join Room Screen -->
+    <section class="screen-view" id="screen-arena-join">
+      <div class="arena-card" style="max-width: 500px;">
+        <div class="back-btn" id="join-back-btn">← Back to Menu</div>
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.25rem; font-weight: 800;">Join Combat Lobby</h2>
+
+        <div class="arena-form-group">
+          <label class="arena-label" for="arena-join-code">6-Character Room Code</label>
+          <input type="text" class="arena-input" id="arena-join-code" placeholder="AB12CD" maxlength="6" style="text-transform: uppercase; font-family: monospace; letter-spacing: 0.2em; text-align: center; font-size: 1.6rem; font-weight: 800;">
+        </div>
+
+        <div class="arena-form-group">
+          <label class="arena-label" for="arena-join-nickname">Your Nickname</label>
+          <input type="text" class="arena-input" id="arena-join-nickname" placeholder="e.g. Phoenix" maxlength="16">
+        </div>
+
+        <div class="arena-form-group">
+          <label class="arena-label">Combat Chassis Skin</label>
+          <div class="skin-picker">
+            <div class="skin-circle selected" data-skin="#06b6d4" style="background:#06b6d4;"></div>
+            <div class="skin-circle" data-skin="#ef4444" style="background:#ef4444;"></div>
+            <div class="skin-circle" data-skin="#10b981" style="background:#10b981;"></div>
+            <div class="skin-circle" data-skin="#f59e0b" style="background:#f59e0b;"></div>
+            <div class="skin-circle" data-skin="#a855f7" style="background:#a855f7;"></div>
+            <div class="skin-circle" data-skin="#f97316" style="background:#f97316;"></div>
+          </div>
+        </div>
+
+        <button class="btn-arena" id="btn-join-arena-submit">Enter Lobby ➔</button>
+      </div>
+    </section>
+
+    <!-- 5. Lobby Screen -->
+    <section class="screen-view" id="screen-arena-lobby">
+      <div class="arena-card" style="max-width: 650px;">
+        <div style="text-align: center;">
+          <span class="hero-tag">ARENA LOBBY</span>
+          <div class="lobby-code-box">
+            <div style="font-size: 0.8rem; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.25rem;">SHARE CODE WITH FRIENDS</div>
+            <div class="lobby-code-text" id="arena-lobby-code">------</div>
+            <button class="game-hub-badge" id="btn-copy-arena-code" style="margin-top: 0.5rem; cursor: pointer;">📋 Copy Code</button>
+          </div>
+          <div style="color: var(--text-muted); font-size: 0.9rem;">
+            Map: <strong id="arena-lobby-map">CYBER</strong> • Mode: <strong id="arena-lobby-mode">LastManStanding</strong>
+          </div>
+        </div>
+
+        <div style="margin: 1.5rem 0;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">
+            <span>Joined Combatants (<span id="arena-lobby-count">1</span>/8)</span>
+            <span style="color: var(--neon-blue);">Synced Live</span>
+          </div>
+          <div class="lobby-players" id="arena-lobby-players-grid">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div id="host-match-actions">
+          <button class="btn-arena" id="btn-arena-start">Start Arena Match ⚔️</button>
+        </div>
+
+        <div id="guest-match-actions" style="display: none; text-align: center;">
+          <button class="btn-arena" id="btn-arena-ready">Toggle Ready Status ⚡</button>
+          <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">Waiting for the room host to initiate combat…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Gameplay Screen -->
+    <section class="screen-view" id="screen-arena-gameplay">
+      <canvas id="arena-canvas"></canvas>
+
+      <!-- HUD Overlay -->
+      <div class="hud-overlay">
+        <div class="hud-top">
+          <!-- Player Health Bar -->
+          <div class="hud-player-status">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 800;">
+              <span>HEALTH</span>
+              <span id="hud-hp-text">100 / 100</span>
+            </div>
+            <div class="hud-hp-bar-bg">
+              <div class="hud-hp-bar-fill" id="hud-hp-bar"></div>
+            </div>
+            <div class="hud-buffs" id="hud-active-buffs"></div>
+          </div>
+
+          <!-- Center Match Status -->
+          <div class="hud-center">
+            <div class="hud-timer-val" id="hud-timer">1:30</div>
+            <div class="hud-mode-lbl" id="hud-mode-text">Last Man Standing</div>
+          </div>
+
+          <!-- Mini Leaderboard -->
+          <div class="hud-leaderboard">
+            <div class="hud-lb-title">Leaderboard</div>
+            <div id="hud-leaderboard-rows"></div>
+          </div>
+        </div>
+
+        <!-- Real-time Kill Feed -->
+        <div class="hud-kill-feed" id="hud-kill-feed"></div>
+
+        <!-- Controls Guide Banner -->
+        <div class="desktop-controls-hint">
+          🎮 Controls: <strong>WASD / Arrow Keys</strong> to Move • <strong>Mouse</strong> to Aim • <strong>Left Click / Space</strong> to Fire
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Match Results Screen -->
+    <section class="screen-view" id="screen-arena-results">
+      <div class="arena-card" style="max-width: 650px; text-align: center;">
+        <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">🏆</div>
+        <h2 style="font-size: 2.2rem; font-weight: 900; margin-bottom: 0.25rem;">Combat Concluded!</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Match statistics and final combatant rankings:</p>
+
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Kills</th>
+              <th>Deaths</th>
+              <th>Damage</th>
+            </tr>
+          </thead>
+          <tbody id="arena-results-tbody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
+          <button class="btn-arena" id="btn-arena-rematch" style="max-width: 220px; display: none;">Rematch 🔄</button>
+          <button class="game-hub-badge" id="btn-arena-exit-home" style="padding: 1rem 1.5rem; border-radius: 10px; font-size: 1rem;">Back to Menu 🏠</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Synthesizer Audio -->
+  <script src="js/audio.js"></script>
+  <!-- 2D Canvas Engine -->
+  <script src="js/arena-engine.js"></script>
+  <!-- Main Arena Controller -->
+  <script src="js/arena-app.js"></script>
+</body>
+</html>
