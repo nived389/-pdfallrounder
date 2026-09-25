@@ -138,16 +138,15 @@ class DocuVexApp {
       saveClientIdBtn.addEventListener('click', () => this.saveGoogleClientId());
     }
 
-    // Sample loading buttons
-    document.getElementById('btn-add-samples').addEventListener('click', () => this.loadSamples(12));
-    document.getElementById('btn-add-stress').addEventListener('click', () => this.loadSamples(50));
-
     // Clear all
-    document.getElementById('btn-clear-all').addEventListener('click', () => {
-      if (this.files.length && confirm('Clear all files from workspace?')) {
-        this.clearFiles();
-      }
-    });
+    const clearAllBtn = document.getElementById('btn-clear-all');
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener('click', () => {
+        if (this.files.length && confirm('Clear all files from workspace?')) {
+          this.clearFiles();
+        }
+      });
+    }
 
     // Drag and drop zone
     const dropCard = document.getElementById('drop-card');
@@ -238,9 +237,7 @@ class DocuVexApp {
         if (fileToOpen) {
           this.openViewer(fileToOpen.id);
         } else {
-          this.loadSamples(4).then(() => {
-            if (this.files[0]) this.openViewer(this.files[0].id);
-          });
+          this.openNewDocument();
         }
       });
     }
@@ -411,7 +408,7 @@ class DocuVexApp {
       const res = await fetch('/api/files');
       if (res.ok) {
         const data = await res.json();
-        if (data.success && data.files && data.files.length) {
+        if (data.success && data.files) {
           this.files = data.files;
           this.files.forEach(f => this.selectedIds.add(f.id));
           this.renderUI();
@@ -420,10 +417,28 @@ class DocuVexApp {
       }
     } catch (e) {}
 
-    // Standalone / GitHub Pages fallback
-    this.files = this.generateClientSamples(8);
-    this.files.forEach(f => this.selectedIds.add(f.id));
+    // Clean initial workspace ready for user files
+    this.files = [];
+    this.selectedIds.clear();
     this.renderUI();
+  }
+
+  openNewDocument() {
+    const newDoc = {
+      id: 'doc_' + Date.now(),
+      filename: 'New_Document.pdf',
+      size: 1024,
+      sizeFormatted: '1 page',
+      ext: 'pdf',
+      category: 'pdf',
+      pageCount: 1,
+      downloadUrl: '#'
+    };
+    this.files.unshift(newDoc);
+    this.selectedIds.add(newDoc.id);
+    this.renderUI();
+    this.openViewer(newDoc.id);
+    this.showToast('Created new blank PDF document');
   }
 
   async loadSamples(count = 12) {
