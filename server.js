@@ -596,7 +596,7 @@ function handlePlayerDisconnect(socket) {
 }
 
 server.listen(PORT, () => {
-  console.log(`🚀 OmniConvert & PDF Suite running on http://localhost:${PORT}`);
+  console.log(`🚀 DocuVex Pro Suite (by NxD) running on http://localhost:${PORT}`);
   console.log(`📁 API endpoints mounted at http://localhost:${PORT}/api`);
   console.log(`⚔️ Arcade Arena: http://localhost:${PORT}/arena | ⚡ QuizRoom: http://localhost:${PORT}/quiz`);
 });

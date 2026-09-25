@@ -274,7 +274,7 @@ def generate_cover_page(title, subtitle, author, theme_color, template='executiv
     </div>
   </div>
   <div class="footer-row">
-    <span>OmniConvert Publishing Suite</span>
+    <span>DocuVex Publishing Suite (by NxD)</span>
     <span>Privileged & Confidential</span>
   </div>
 </body>
@@ -495,7 +495,7 @@ def generate_samples(target_dir, count=12):
         elif ext == 'pdf':
             txt_src = os.path.join(target_dir, f"_tmp_txt_{i}.txt")
             with open(txt_src, 'w') as f:
-                f.write(f"OmniConvert Pro Suite - Document #{i}\n")
+                f.write(f"DocuVex Pro Suite (by NxD) - Document #{i}\n")
                 f.write(f"Title: {cat['prefix']} #{i}\n")
                 f.write(f"Assembled: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
                 f.write("Universal conversion verification completed.\n")

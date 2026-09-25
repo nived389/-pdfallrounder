@@ -1,16 +1,16 @@
-# 🚀 OmniConvert & PDF Suite
+# 🚀 DocuVex Pro — Universal File Transformer & PDF Studio
 
-**Universal File Conversion, Batch Merger & Interactive PDF Studio**  
+**High-Capacity Multi-Format Conversion, Batch Merger & Interactive PDF Studio**  
 *Created & Engineered by **NxD***
 
-OmniConvert is an enterprise-grade, browser-based suite built to handle high-capacity batch file operations (100+ files at once), universal multi-format conversion, interactive PDF editing, in-browser PDF reading, and multi-file-to-single-PDF merging.
+DocuVex Pro is an advanced, browser-based suite built to handle high-capacity batch file operations (100+ files at once), universal multi-format conversion, interactive PDF editing, in-browser PDF reading, and multi-file-to-single-PDF merging.
 
 ---
 
 ## 👤 Creator Profile
 - **Creator & Lead Architect**: **NxD**
 - **Role**: Lead Developer & System Architect
-- **Product**: OmniConvert Pro (2026 Edition)
+- **Product**: DocuVex Pro (by NxD)
 
 ---
 

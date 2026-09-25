@@ -1,9 +1,9 @@
 /**
- * OmniConvert Pro — Advanced Universal Converter & PDF Studio
- * Feature-Packed Frontend Controller with Deep Options
+ * DocuVex Pro — Universal File Transformer & PDF Studio by NxD
+ * High-Capacity Batch Conversion & Full Creative PDF Suite
  */
 
-class OmniConvertApp {
+class DocuVexApp {
   constructor() {
     this.files = [];
     this.selectedIds = new Set();
@@ -690,7 +690,7 @@ class OmniConvertApp {
     const hasCover = document.getElementById('chk-merge-cover').checked;
     const coverTitle = hasCover ? (document.getElementById('merge-title-input').value.trim() || 'Executive Portfolio') : null;
     const coverSubtitle = hasCover ? (document.getElementById('merge-subtitle-input').value.trim() || 'Compiled from Multi-Format Documents') : null;
-    const coverAuthor = hasCover ? (document.getElementById('merge-author-input').value.trim() || 'OmniConvert Pro Suite') : null;
+    const coverAuthor = hasCover ? (document.getElementById('merge-author-input').value.trim() || 'DocuVex Pro Suite by NxD') : null;
     const coverThemeRadio = document.querySelector('input[name="cover-color"]:checked');
     const coverTheme = coverThemeRadio ? coverThemeRadio.value : '#3b82f6';
     
@@ -741,7 +741,7 @@ class OmniConvertApp {
           
           const dlBtn = document.getElementById('btn-proc-download');
           dlBtn.textContent = `Download ${filename}`;
-          const blob = new Blob([`%PDF-1.4\n% OmniConvert Pro Merged Deliverable: ${filename}\n% Author: NxD\n%%EOF`], { type: 'application/pdf' });
+          const blob = new Blob([`%PDF-1.4\n% DocuVex Pro Merged Deliverable: ${filename}\n% Author: NxD\n%%EOF`], { type: 'application/pdf' });
           dlBtn.href = URL.createObjectURL(blob);
           dlBtn.download = filename;
           document.getElementById('proc-actions').style.display = 'block';
@@ -807,7 +807,7 @@ class OmniConvertApp {
           const outName = `Converted_Deliverable.${targetFormat}`;
           dlBtn.textContent = `Download ${outName}`;
           const mime = targetFormat === 'pdf' ? 'application/pdf' : (targetFormat === 'png' ? 'image/png' : 'application/octet-stream');
-          const blob = new Blob([`OmniConvert Pro Converted File: ${outName}\nCreator: NxD`], { type: mime });
+          const blob = new Blob([`DocuVex Pro Converted File: ${outName}\nCreator: NxD`], { type: mime });
           dlBtn.href = URL.createObjectURL(blob);
           dlBtn.download = outName;
           document.getElementById('proc-actions').style.display = 'block';
@@ -1718,5 +1718,7 @@ class OmniConvertApp {
 
 // Start App
 document.addEventListener('DOMContentLoaded', () => {
-  window.app = new OmniConvertApp();
+  window.app = new DocuVexApp();
+  window.DocuVexApp = DocuVexApp;
+  window.OmniConvertApp = DocuVexApp;
 });
