@@ -9,7 +9,7 @@
     "test": "node test_multiplayer.js && node test_arena.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "NxD",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

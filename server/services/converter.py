@@ -345,7 +345,7 @@ def merge_to_pdf(input_paths, output_pdf_path, options=None):
         cover_title = options.get('coverTitle')
         if cover_title and cover_title.strip():
             subtitle = options.get('coverSubtitle', 'Compiled Document Portfolio')
-            author = options.get('coverAuthor', 'OmniConvert Suite')
+            author = options.get('coverAuthor', 'NxD')
             theme_color = options.get('coverTheme', '#3b82f6')
             
             c_html = generate_cover_page(cover_title.strip(), subtitle.strip(), author.strip(), theme_color, source_count=len(input_paths))

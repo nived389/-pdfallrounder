@@ -46,6 +46,11 @@
         <button class="btn btn-ghost btn-sm" id="btn-clear-all" title="Clear workspace">
           Clear
         </button>
+        <button class="creator-badge-btn" id="btn-creator-profile" title="View Creator Profile">
+          <span class="creator-dot"></span>
+          <span class="creator-by">Created by</span>
+          <span class="creator-name">NxD</span>
+        </button>
         <button class="theme-btn" id="btn-theme-toggle" title="Toggle theme">
           <span class="icon-sun">☀️</span>
           <span class="icon-moon">🌙</span>
@@ -207,7 +212,7 @@
               <div id="cover-fields">
                 <input type="text" id="merge-title-input" class="simple-input mb-2" placeholder="Document Title" value="Quarterly Portfolio & Review" />
                 <input type="text" id="merge-subtitle-input" class="simple-input mb-2" placeholder="Subtitle" value="Compiled from Multi-Format Documents & Assets" />
-                <input type="text" id="merge-author-input" class="simple-input mb-2" placeholder="Author / Organization" value="OmniConvert Publishing" />
+                <input type="text" id="merge-author-input" class="simple-input mb-2" placeholder="Author / Organization" value="NxD" />
                 
                 <div class="simple-form-row">
                   <label>Accent Color Theme</label>
@@ -427,6 +432,46 @@
         <a href="#" class="btn btn-primary btn-block" id="btn-proc-download" download>Download File</a>
         <button class="btn btn-ghost btn-sm mt-2" onclick="app.closeModals()">Done</button>
       </div>
+    </div>
+  </div>
+
+  <!-- =================================================== -->
+  <!-- MODAL 5: CREATOR PROFILE (NxD) -->
+  <!-- =================================================== -->
+  <div class="modal-overlay" id="modal-creator" style="display: none;">
+    <div class="modal-box modal-sm text-center">
+      <div class="creator-avatar-wrap">
+        <div class="creator-avatar-lg">NxD</div>
+      </div>
+      <h3 class="mt-3" style="font-size: 22px; font-weight: 800; letter-spacing: -0.01em;">NxD</h3>
+      <p class="creator-role-title">Creator & Lead Architect</p>
+      
+      <div class="creator-tags-row mt-2">
+        <span class="creator-tag">OmniConvert Pro</span>
+        <span class="creator-tag">PDF Suite</span>
+        <span class="creator-tag">Lead Engineer</span>
+      </div>
+
+      <div class="creator-card-body mt-3">
+        <p>Architect and creator of OmniConvert Pro Suite — engineered for high-concurrency 100+ batch uploads, universal multi-format conversion matrix, and native hardware acceleration.</p>
+      </div>
+
+      <div class="creator-stats-row mt-3">
+        <div class="c-stat">
+          <strong>100+</strong>
+          <span>Batch Cap</span>
+        </div>
+        <div class="c-stat">
+          <strong>Universal</strong>
+          <span>Conversion</span>
+        </div>
+        <div class="c-stat">
+          <strong>2026</strong>
+          <span>Pro Edition</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block mt-4" onclick="app.closeModals()">Close Profile</button>
     </div>
   </div>
 

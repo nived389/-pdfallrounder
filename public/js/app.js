@@ -85,6 +85,14 @@ class OmniConvertApp {
   // =========================================================================
 
   initEvents() {
+    // Creator Profile Modal toggle
+    const creatorBtn = document.getElementById('btn-creator-profile');
+    if (creatorBtn) {
+      creatorBtn.addEventListener('click', () => {
+        document.getElementById('modal-creator').style.display = 'flex';
+      });
+    }
+
     // Theme toggle
     document.getElementById('btn-theme-toggle').addEventListener('click', () => {
       const cur = document.documentElement.getAttribute('data-theme');
