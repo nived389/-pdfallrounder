@@ -27,8 +27,8 @@ const converterRoutes = createConverterRoutes(io, jobQueue);
 const PORT = process.env.PORT || 3002;
 
 app.use(cors());
-app.use(express.json({ limit: '150mb' }));
-app.use(express.urlencoded({ extended: true, limit: '150mb' }));
+app.use(express.json({ limit: '1000mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1000mb' }));
 app.use('/api', converterRoutes);
 app.use(express.static(path.join(__dirname, 'public')));
 

@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="css/style.css?v=2.6.0">
+  <link rel="stylesheet" href="css/style.css?v=2.7.0">
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js"></script>
@@ -138,6 +138,12 @@
             Merge to PDF
           </button>
 
+          <!-- Action 1.5: Dedicated PDF Compression Studio -->
+          <button class="btn btn-secondary" id="btn-compress-action" title="Compress PDF file size">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h6m0 0v6m0-6L3 21m17-11h-6m0 0V4m0 6l7-7"/></svg>
+            Compress PDF
+          </button>
+
           <!-- Action 2: Advanced Conversion Dialog -->
           <button class="btn btn-secondary" id="btn-open-convert-modal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
@@ -189,8 +195,18 @@
       </div>
 
       <div class="modal-body">
-        <!-- Filmstrip -->
-        <div class="section-label">Page Sequence (Drag cards to reorder):</div>
+        <!-- Filmstrip with batch controls and count -->
+        <div class="filmstrip-header">
+          <div class="filmstrip-title">
+            Page Sequence (<strong id="merge-file-count">0</strong> queued):
+          </div>
+          <div class="filmstrip-actions">
+            <button type="button" class="btn-filmstrip" id="btn-merge-sort-az" title="Sort files by Name A to Z">Sort A-Z</button>
+            <button type="button" class="btn-filmstrip" id="btn-merge-sort-za" title="Sort files by Name Z to A">Sort Z-A</button>
+            <button type="button" class="btn-filmstrip" id="btn-merge-reverse" title="Reverse order">Reverse</button>
+            <button type="button" class="btn-filmstrip" id="btn-merge-reset" title="Reset order">Reset</button>
+          </div>
+        </div>
         <div class="merge-filmstrip" id="merge-filmstrip"></div>
 
         <!-- Advanced Options Grid -->
@@ -199,6 +215,16 @@
             <div class="simple-form-row">
               <label>Output Filename</label>
               <input type="text" id="merge-filename" class="simple-input" value="Combined_Portfolio.pdf" />
+            </div>
+
+            <div class="simple-form-row">
+              <label>Quality & Compression</label>
+              <select id="merge-compression" class="simple-select form-control">
+                <option value="lossless" selected>Lossless (100% Original, Zero Compression)</option>
+                <option value="balanced">Balanced Compression (~35% smaller, standard)</option>
+                <option value="extreme">Extreme Compression (~70% smaller, compact)</option>
+              </select>
+              <span class="field-hint">Lossless retains 100% original resolution, bitstreams, and uncompressed byte arrays.</span>
             </div>
 
             <div class="simple-form-row">
@@ -601,9 +627,73 @@
     </div>
   </div>
 
+  <!-- =================================================== -->
+  <!-- MODAL 7: DEDICATED PDF COMPRESSION STUDIO -->
+  <!-- =================================================== -->
+  <div class="modal-overlay" id="modal-compress" style="display: none;">
+    <div class="modal-box modal-md">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3>Compress PDF Document</h3>
+          <p class="modal-subtitle">Reduce PDF file size while optimizing quality for sharing, web, and email</p>
+        </div>
+        <button class="btn-close" onclick="app.closeModals()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="simple-form-row">
+          <label>Select Document to Compress</label>
+          <select id="compress-file-select" class="simple-select form-control"></select>
+          <div id="compress-file-info" class="field-hint mt-1"></div>
+        </div>
+
+        <div class="section-label mt-3 mb-2">Compression Level:</div>
+        <div class="compression-cards">
+          <label class="compression-card">
+            <input type="radio" name="compress-level" value="light" />
+            <div class="card-content">
+              <div class="card-title">Light Compression</div>
+              <div class="card-desc">High resolution, crisp vectors & fonts. ~25% reduction.</div>
+              <div class="card-badge">Best Quality</div>
+            </div>
+          </label>
+          <label class="compression-card active">
+            <input type="radio" name="compress-level" value="balanced" checked />
+            <div class="card-content">
+              <div class="card-title">Balanced Compression</div>
+              <div class="card-desc">Recommended for web, email & general sharing. ~50% reduction.</div>
+              <div class="card-badge badge-rec">Recommended</div>
+            </div>
+          </label>
+          <label class="compression-card">
+            <input type="radio" name="compress-level" value="extreme" />
+            <div class="card-content">
+              <div class="card-title">Extreme Compression</div>
+              <div class="card-desc">Smallest possible file size. Best for email limits. ~75% reduction.</div>
+              <div class="card-badge badge-max">Max Reduction</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="simple-form-row mt-3">
+          <label>Output Filename</label>
+          <input type="text" id="compress-filename" class="simple-input" value="Document_compressed.pdf" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="app.closeModals()">Cancel</button>
+        <button class="btn btn-primary" id="btn-confirm-compress">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h6m0 0v6m0-6L3 21m17-11h-6m0 0V4m0 6l7-7"/></svg>
+          Compress & Download
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast" class="simple-toast"></div>
 
-  <script src="js/app.js?v=2.6.0"></script>
+  <script src="js/app.js?v=2.7.0"></script>
 </body>
 </html>

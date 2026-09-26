@@ -655,11 +655,57 @@ body::after {
   letter-spacing: 0.05em;
 }
 
+.filmstrip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filmstrip-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.filmstrip-title strong {
+  color: var(--accent);
+}
+
+.filmstrip-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-filmstrip {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-filmstrip:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
 .merge-filmstrip {
   display: flex;
   gap: 10px;
   overflow-x: auto;
   padding: 6px 2px;
+  scroll-behavior: smooth;
+  max-height: 160px;
 }
 
 .merge-card {
@@ -1371,5 +1417,90 @@ body::after {
   color: var(--accent);
   font-weight: 500;
 }
+
+/* Field Hint & Compression Controls */
+.field-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.compression-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compression-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.compression-card:hover {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.compression-card input[type="radio"] {
+  margin-top: 3px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.compression-card.active, .compression-card:has(input:checked) {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.compression-card .card-content {
+  flex: 1;
+}
+
+.compression-card .card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.compression-card .card-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.compression-card .card-badge {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.compression-card .card-badge.badge-rec {
+  background: rgba(16, 185, 129, 0.18);
+  color: var(--success);
+  font-weight: 600;
+}
+
+.compression-card .card-badge.badge-max {
+  background: rgba(59, 130, 246, 0.18);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 
 

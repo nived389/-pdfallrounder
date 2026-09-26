@@ -246,35 +246,51 @@ class JobQueue {
         try {
           const imgBuffer = fs.readFileSync(filePath);
           const img = ext === 'png' ? await mergedPdf.embedPng(imgBuffer) : await mergedPdf.embedJpg(imgBuffer);
-          const page = mergedPdf.addPage([595.28, 841.89]);
-          const { width, height } = img.scaleToFit(535.28, 781.89);
-          page.drawImage(img, {
-            x: (595.28 - width) / 2,
-            y: (841.89 - height) / 2,
-            width,
-            height
-          });
+          const isAuto = (options.pageSize || '').toLowerCase() === 'auto';
+          const page = isAuto ? mergedPdf.addPage([img.width, img.height]) : mergedPdf.addPage([595.28, 841.89]);
+          if (isAuto) {
+            page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+          } else {
+            const { width, height } = img.scaleToFit(535.28, 781.89);
+            page.drawImage(img, {
+              x: (595.28 - width) / 2,
+              y: (841.89 - height) / 2,
+              width,
+              height
+            });
+          }
           tocEntries.push({ title: f.filename || path.basename(filePath), startPage: pageOffset + 1, pageCount: 1 });
           pageOffset += 1;
         } catch (e) {
           console.warn('Error embedding image in merge:', e);
         }
       } else {
-        // Plain text / Markdown / CSV / code
+        // Plain text / Markdown / CSV / code - paginate across pages so nothing is dropped
         try {
           const content = fs.readFileSync(filePath, 'utf8');
-          const page = mergedPdf.addPage([595.28, 841.89]);
-          const lines = content.split('\n').slice(0, 45);
-          let y = 780;
-          page.drawText(f.filename || path.basename(filePath), { x: 50, y, size: 16, font: boldFont });
-          y -= 30;
-          for (const line of lines) {
-            if (y < 40) break;
-            page.drawText(line.substring(0, 90), { x: 50, y, size: 10, font });
-            y -= 16;
+          const lines = content.split(/\r?\n/);
+          const linesPerPage = 42;
+          const totalTextPages = Math.max(1, Math.ceil(lines.length / linesPerPage));
+
+          for (let tp = 0; tp < totalTextPages; tp++) {
+            const page = mergedPdf.addPage([595.28, 841.89]);
+            let y = 780;
+            if (tp === 0) {
+              page.drawText(f.filename || path.basename(filePath), { x: 50, y, size: 16, font: boldFont });
+              y -= 30;
+            } else {
+              page.drawText(`${f.filename || path.basename(filePath)} (Page ${tp + 1}/${totalTextPages})`, { x: 50, y, size: 11, font: boldFont, color: rgb(0.4, 0.45, 0.5) });
+              y -= 25;
+            }
+            const pageLines = lines.slice(tp * linesPerPage, (tp + 1) * linesPerPage);
+            for (const line of pageLines) {
+              if (y < 40) break;
+              page.drawText(line.substring(0, 90), { x: 50, y, size: 10, font });
+              y -= 16;
+            }
           }
-          tocEntries.push({ title: f.filename || path.basename(filePath), startPage: pageOffset + 1, pageCount: 1 });
-          pageOffset += 1;
+          tocEntries.push({ title: f.filename || path.basename(filePath), startPage: pageOffset + 1, pageCount: totalTextPages });
+          pageOffset += totalTextPages;
         } catch (e) {
           console.warn('Error appending text file in merge:', e);
         }
