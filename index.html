@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="css/style.css?v=2.9.0">
+  <link rel="stylesheet" href="css/style.css?v=3.0.0">
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js"></script>
@@ -201,6 +201,7 @@
             Page Sequence (<strong id="merge-file-count">0</strong> / 100 max queued):
           </div>
           <div class="filmstrip-actions">
+            <button type="button" class="btn-filmstrip" id="btn-merge-all" title="Queue all files in workspace">Queue All</button>
             <button type="button" class="btn-filmstrip" id="btn-merge-sort-az" title="Sort files by Name A to Z">Sort A-Z</button>
             <button type="button" class="btn-filmstrip" id="btn-merge-sort-za" title="Sort files by Name Z to A">Sort Z-A</button>
             <button type="button" class="btn-filmstrip" id="btn-merge-reverse" title="Reverse order">Reverse</button>
@@ -694,6 +695,6 @@
   <!-- Toast Notification -->
   <div id="toast" class="simple-toast"></div>
 
-  <script src="js/app.js?v=2.9.0"></script>
+  <script src="js/app.js?v=3.0.0"></script>
 </body>
 </html>

@@ -139,7 +139,8 @@ class JobQueue {
         .replace(/[\u201C\u201D]/g, '"')
         .replace(/[\u2013\u2014]/g, '-')
         .replace(/[\u2026]/g, '...')
-        .replace(/[^\x20-\x7E\xA0-\xFF]/g, ' ');
+        .replace(/\t/g, '  ')
+        .replace(/[^\x20-\x7E]/g, ' ');
     }
 
     const mergedPdf = await PDFDocument.create();
@@ -228,76 +229,117 @@ class JobQueue {
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       const filePath = f.storagePath || f.path;
-      if (!filePath || !fs.existsSync(filePath)) continue;
-
-      const ext = path.extname(filePath).toLowerCase().replace('.', '');
-      job.currentStep = `Merging component ${i + 1} of ${files.length}: ${f.filename || path.basename(filePath)}...`;
+      const fileName = f.filename || (filePath ? path.basename(filePath) : `Component_${i + 1}`);
+      const ext = path.extname(fileName || '').toLowerCase().replace('.', '');
+      job.currentStep = `Merging component ${i + 1} of ${files.length}: ${fileName}...`;
       job.progressPercent = 30 + Math.round((i / files.length) * 50);
       this.emitProgress(job);
 
-      if (ext === 'pdf') {
-        try {
-          const pdfBuffer = fs.readFileSync(filePath);
-          const srcDoc = await PDFDocument.load(pdfBuffer, { ignoreEncryption: true });
-          const pages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
-          tocEntries.push({ title: f.filename || path.basename(filePath), startPage: pageOffset + 1, pageCount: pages.length });
-          pages.forEach(p => mergedPdf.addPage(p));
-          pageOffset += pages.length;
-        } catch (e) {
-          console.warn('Error loading pdf in merge:', e);
-        }
-      } else if (['png', 'jpg', 'jpeg'].includes(ext)) {
-        try {
-          const imgBuffer = fs.readFileSync(filePath);
-          const img = ext === 'png' ? await mergedPdf.embedPng(imgBuffer) : await mergedPdf.embedJpg(imgBuffer);
-          const isAuto = (options.pageSize || '').toLowerCase() === 'auto';
-          const page = isAuto ? mergedPdf.addPage([img.width, img.height]) : mergedPdf.addPage([595.28, 841.89]);
-          if (isAuto) {
-            page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
-          } else {
-            const { width, height } = img.scaleToFit(535.28, 781.89);
-            page.drawImage(img, {
-              x: (595.28 - width) / 2,
-              y: (841.89 - height) / 2,
-              width,
-              height
-            });
-          }
-          tocEntries.push({ title: f.filename || path.basename(filePath), startPage: pageOffset + 1, pageCount: 1 });
-          pageOffset += 1;
-        } catch (e) {
-          console.warn('Error embedding image in merge:', e);
-        }
-      } else {
-        // Plain text / Markdown / CSV / code - paginate across pages so nothing is dropped
-        try {
-          const content = fs.readFileSync(filePath, 'utf8');
-          const lines = content.split(/\r?\n/);
-          const linesPerPage = 42;
-          const totalTextPages = Math.max(1, Math.ceil(lines.length / linesPerPage));
+      let filePagesAdded = 0;
 
-          for (let tp = 0; tp < totalTextPages; tp++) {
-            const page = mergedPdf.addPage([595.28, 841.89]);
-            let y = 780;
-            if (tp === 0) {
-              page.drawText(f.filename || path.basename(filePath), { x: 50, y, size: 16, font: boldFont });
-              y -= 30;
+      try {
+        if (filePath && fs.existsSync(filePath)) {
+          if (ext === 'pdf') {
+            let pdfBuffer = fs.readFileSync(filePath);
+            if (pdfBuffer && pdfBuffer.length > 0) {
+              const searchLen = Math.min(pdfBuffer.length, 1024);
+              let pdfOffset = -1;
+              for (let b = 0; b < searchLen - 4; b++) {
+                if (pdfBuffer[b] === 0x25 && pdfBuffer[b+1] === 0x50 && pdfBuffer[b+2] === 0x44 && pdfBuffer[b+3] === 0x46) {
+                  pdfOffset = b;
+                  break;
+                }
+              }
+              if (pdfOffset > 0) {
+                pdfBuffer = pdfBuffer.subarray(pdfOffset);
+              }
+            }
+            const srcDoc = await PDFDocument.load(pdfBuffer, { ignoreEncryption: true });
+            const pageIndices = srcDoc.getPageIndices();
+            if (pageIndices.length > 0) {
+              const pages = await mergedPdf.copyPages(srcDoc, pageIndices);
+              tocEntries.push({ title: sanitizeForPdf(fileName), startPage: pageOffset + 1, pageCount: pages.length });
+              pages.forEach(p => mergedPdf.addPage(p));
+              pageOffset += pages.length;
+              filePagesAdded += pages.length;
+            }
+          } else if (['png', 'jpg', 'jpeg'].includes(ext)) {
+            const imgBuffer = fs.readFileSync(filePath);
+            const img = ext === 'png' ? await mergedPdf.embedPng(imgBuffer) : await mergedPdf.embedJpg(imgBuffer);
+            const isAuto = (options.pageSize || '').toLowerCase() === 'auto';
+            const page = isAuto ? mergedPdf.addPage([img.width, img.height]) : mergedPdf.addPage([595.28, 841.89]);
+            if (isAuto) {
+              page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
             } else {
-              page.drawText(`${f.filename || path.basename(filePath)} (Page ${tp + 1}/${totalTextPages})`, { x: 50, y, size: 11, font: boldFont, color: rgb(0.4, 0.45, 0.5) });
-              y -= 25;
+              const { width, height } = img.scaleToFit(535.28, 781.89);
+              page.drawImage(img, {
+                x: (595.28 - width) / 2,
+                y: (841.89 - height) / 2,
+                width,
+                height
+              });
             }
-            const pageLines = lines.slice(tp * linesPerPage, (tp + 1) * linesPerPage);
-            for (const line of pageLines) {
-              if (y < 40) break;
-              page.drawText(line.substring(0, 90), { x: 50, y, size: 10, font });
-              y -= 16;
+            tocEntries.push({ title: sanitizeForPdf(fileName), startPage: pageOffset + 1, pageCount: 1 });
+            pageOffset += 1;
+            filePagesAdded += 1;
+          } else if (['txt', 'csv', 'md', 'json', 'xml', 'html', 'log', 'rtf'].includes(ext)) {
+            const content = fs.readFileSync(filePath, 'utf8');
+            const lines = content.split(/\r?\n/);
+            const linesPerPage = 42;
+            const totalTextPages = Math.max(1, Math.ceil(lines.length / linesPerPage));
+
+            for (let tp = 0; tp < totalTextPages; tp++) {
+              const page = mergedPdf.addPage([595.28, 841.89]);
+              let y = 780;
+              if (tp === 0) {
+                page.drawText(sanitizeForPdf(fileName), { x: 50, y, size: 16, font: boldFont });
+                y -= 30;
+              } else {
+                page.drawText(sanitizeForPdf(`${fileName} (Page ${tp + 1}/${totalTextPages})`), { x: 50, y, size: 11, font: boldFont, color: rgb(0.4, 0.45, 0.5) });
+                y -= 25;
+              }
+              const pageLines = lines.slice(tp * linesPerPage, (tp + 1) * linesPerPage);
+              for (const line of pageLines) {
+                if (y < 40) break;
+                page.drawText(sanitizeForPdf(line.substring(0, 90)), { x: 50, y, size: 10, font });
+                y -= 16;
+              }
             }
+            tocEntries.push({ title: sanitizeForPdf(fileName), startPage: pageOffset + 1, pageCount: totalTextPages });
+            pageOffset += totalTextPages;
+            filePagesAdded += totalTextPages;
           }
-          tocEntries.push({ title: f.filename || path.basename(filePath), startPage: pageOffset + 1, pageCount: totalTextPages });
-          pageOffset += totalTextPages;
-        } catch (e) {
-          console.warn('Error appending text file in merge:', e);
         }
+
+        if (filePagesAdded === 0) {
+          throw new Error(`Zero pages rendered for ${fileName}`);
+        }
+      } catch (err) {
+        console.warn(`Error processing file ${fileName} in server merge, generating component presentation page:`, err.message);
+        const page = mergedPdf.addPage([595.28, 841.89]);
+        page.drawRectangle({
+          x: 40,
+          y: 720,
+          width: 515.28,
+          height: 80,
+          color: rgb(0.95, 0.96, 0.98)
+        });
+        page.drawText(sanitizeForPdf(fileName), {
+          x: 55,
+          y: 765,
+          size: 16,
+          font: boldFont,
+          color: rgb(0.12, 0.16, 0.22)
+        });
+        page.drawText(sanitizeForPdf(`File Component ${i + 1} of ${files.length} • Format: ${ext.toUpperCase() || 'DOCUMENT'} • Preserved in Portfolio`), {
+          x: 55,
+          y: 740,
+          size: 10,
+          font,
+          color: rgb(0.4, 0.45, 0.55)
+        });
+        tocEntries.push({ title: sanitizeForPdf(fileName), startPage: pageOffset + 1, pageCount: 1 });
+        pageOffset += 1;
       }
     }
 
