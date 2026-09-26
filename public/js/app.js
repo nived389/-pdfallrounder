@@ -1210,14 +1210,60 @@ class DocuVexApp {
     this.simulateClientConvertJob(ids, targetFormat);
   }
 
-  simulateClientConvertJob(ids, targetFormat) {
+  async simulateClientConvertJob(ids, targetFormat) {
     const fill = document.getElementById('proc-fill');
     let p = 25;
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       p += 25;
       if (fill) fill.style.width = `${Math.min(100, p)}%`;
       if (p >= 100) {
         clearInterval(interval);
+        
+        let blob;
+        const outName = `Converted_Deliverable.${targetFormat}`;
+        
+        if (targetFormat === 'pdf') {
+          try {
+            const pdfLib = await this.ensurePdfLib();
+            const { PDFDocument, StandardFonts } = pdfLib;
+            const doc = await PDFDocument.create();
+            const font = await doc.embedFont(StandardFonts.Helvetica);
+            const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+            
+            for (const id of ids) {
+              const file = this.files.find(f => f.id === id);
+              if (!file) continue;
+              const ext = (file.ext || '').toLowerCase();
+              if (['png', 'jpg', 'jpeg'].includes(ext)) {
+                try {
+                  const bytes = await this.getFileBytes(file);
+                  const img = ext === 'png' ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+                  const page = doc.addPage([595.28, 841.89]);
+                  const { width, height } = img.scaleToFit(535.28, 781.89);
+                  page.drawImage(img, { x: (595.28 - width) / 2, y: (841.89 - height) / 2, width, height });
+                  continue;
+                } catch (e) {}
+              }
+              const page = doc.addPage([595.28, 841.89]);
+              page.drawText(this.sanitizeForPdf(file.filename), { x: 50, y: 780, size: 18, font: bold });
+              page.drawText('Converted with DocuVex Pro Suite by NxD', { x: 50, y: 750, size: 12, font });
+            }
+            if (doc.getPageCount() === 0) {
+              const page = doc.addPage([595.28, 841.89]);
+              page.drawText('DocuVex Pro Converted Document', { x: 50, y: 780, size: 18, font: bold });
+            }
+            const pdfBytes = await doc.save();
+            blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          } catch (e) {
+            console.error('PDFLib convert error:', e);
+          }
+        }
+        
+        if (!blob) {
+          const mime = targetFormat === 'pdf' ? 'application/pdf' : (targetFormat === 'png' ? 'image/png' : 'application/octet-stream');
+          blob = new Blob([`DocuVex Pro Deliverable: ${outName}\nCreator: NxD`], { type: mime });
+        }
+
         setTimeout(() => {
           document.getElementById('proc-spinner').style.display = 'none';
           document.getElementById('proc-success').style.display = 'block';
@@ -1225,10 +1271,7 @@ class DocuVexApp {
           document.getElementById('proc-desc').textContent = `Processed ${ids.length} files to ${targetFormat.toUpperCase()}.`;
           
           const dlBtn = document.getElementById('btn-proc-download');
-          const outName = `Converted_Deliverable.${targetFormat}`;
           dlBtn.textContent = `Download ${outName}`;
-          const mime = targetFormat === 'pdf' ? 'application/pdf' : (targetFormat === 'png' ? 'image/png' : 'application/octet-stream');
-          const blob = new Blob([`DocuVex Pro Converted File: ${outName}\nCreator: NxD`], { type: mime });
           dlBtn.href = URL.createObjectURL(blob);
           dlBtn.download = outName;
           document.getElementById('proc-actions').style.display = 'block';
