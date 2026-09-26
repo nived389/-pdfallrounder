@@ -522,8 +522,13 @@ class DocuVexApp {
           if (res.ok) {
             const data = await res.json();
             if (data.success) {
-              this.files.unshift(data.file);
-              this.selectedIds.add(data.file.id);
+              const fileObj = {
+                ...data.file,
+                rawFile: file,
+                fileData: base64
+              };
+              this.files.unshift(fileObj);
+              this.selectedIds.add(fileObj.id);
               uploaded = true;
             }
           }
@@ -542,7 +547,9 @@ class DocuVexApp {
             ext,
             category: isImg ? 'image' : (ext === 'pdf' ? 'pdf' : 'doc'),
             downloadUrl: base64,
-            thumbnailUrl: isImg ? base64 : this.generateThumbSvg(ext, file.name)
+            thumbnailUrl: isImg ? base64 : this.generateThumbSvg(ext, file.name),
+            rawFile: file,
+            fileData: base64
           };
           this.files.unshift(localFile);
           this.selectedIds.add(localFile.id);
@@ -695,9 +702,12 @@ class DocuVexApp {
 
   async startAdvancedMerge() {
     this.closeModals();
-    this.showProcessingModal('Merging into PDF Portfolio...', 'Assembling documents, generating cover page and TOC.');
+    this.showProcessingModal('Merging into PDF Portfolio...', 'Initializing PDF engine & assembling components...');
 
-    const filename = document.getElementById('merge-filename').value.trim() || 'Combined_Portfolio.pdf';
+    let filename = document.getElementById('merge-filename').value.trim() || 'Combined_Portfolio.pdf';
+    if (!filename.toLowerCase().endsWith('.pdf')) {
+      filename += '.pdf';
+    }
     const pageSize = document.getElementById('merge-page-size').value;
     const orientation = document.getElementById('merge-orientation').value;
     const pageNumbering = document.getElementById('merge-numbering').value;
@@ -711,58 +721,410 @@ class DocuVexApp {
     
     const generateTOC = document.getElementById('chk-merge-toc').checked;
 
-    try {
-      const res = await fetch('/api/jobs/merge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileIds: this.mergeOrder.map(f => f.id),
-          options: {
-            outputName: filename,
-            pageSize,
-            orientation,
-            pageNumbers: pageNumbering,
-            coverTitle,
-            coverSubtitle,
-            coverAuthor,
-            coverTheme,
-            generateTOC
-          }
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) return;
-      }
-    } catch (e) {}
+    const options = {
+      filename,
+      pageSize,
+      orientation,
+      pageNumbering,
+      hasCover,
+      coverTitle,
+      coverSubtitle,
+      coverAuthor,
+      coverTheme,
+      generateTOC
+    };
 
-    // Standalone / GitHub Pages simulation
-    this.simulateClientMergeJob(filename);
+    // Execute genuine client-side merge with PDFLib
+    try {
+      await this.performClientPdfMerge(options);
+    } catch (err) {
+      console.error('Client PDF merge failed, attempting server merge job:', err);
+      // Fallback to server job if available
+      try {
+        const res = await fetch('/api/jobs/merge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileIds: this.mergeOrder.map(f => f.id),
+            options: {
+              outputName: filename,
+              pageSize,
+              orientation,
+              pageNumbers: pageNumbering,
+              coverTitle,
+              coverSubtitle,
+              coverAuthor,
+              coverTheme,
+              generateTOC
+            }
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) return;
+        }
+      } catch (serverErr) {
+        this.showToast('Merge error: ' + (err.message || 'Failed to merge documents'));
+      }
+    }
   }
 
-  simulateClientMergeJob(filename) {
+  async ensurePdfLib() {
+    if (typeof PDFLib !== 'undefined' && PDFLib.PDFDocument) {
+      return PDFLib;
+    }
+    if (typeof window.PDFLib !== 'undefined' && window.PDFLib.PDFDocument) {
+      return window.PDFLib;
+    }
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'js/pdf-lib.min.js';
+      s.onload = () => {
+        if (typeof PDFLib !== 'undefined') resolve(PDFLib);
+        else if (typeof window.PDFLib !== 'undefined') resolve(window.PDFLib);
+        else reject(new Error('PDFLib not available'));
+      };
+      s.onerror = () => {
+        const s2 = document.createElement('script');
+        s2.src = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js';
+        s2.onload = () => {
+          if (typeof PDFLib !== 'undefined') resolve(PDFLib);
+          else if (typeof window.PDFLib !== 'undefined') resolve(window.PDFLib);
+          else reject(new Error('PDFLib CDN failed'));
+        };
+        s2.onerror = reject;
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  dataUrlToUint8Array(dataUrl) {
+    const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+    const binary = atob(base64);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  loadImageElement(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Failed to load image element'));
+      img.src = src;
+    });
+  }
+
+  convertImageToPngBytes(img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || img.width || 800;
+    canvas.height = img.naturalHeight || img.height || 600;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const pngDataUrl = canvas.toDataURL('image/png');
+    return this.dataUrlToUint8Array(pngDataUrl);
+  }
+
+  async getFileBytes(file) {
+    if (file.rawFile && typeof file.rawFile.arrayBuffer === 'function') {
+      const buffer = await file.rawFile.arrayBuffer();
+      return new Uint8Array(buffer);
+    }
+    if (file.fileData) {
+      return this.dataUrlToUint8Array(file.fileData);
+    }
+    if (file.downloadUrl && file.downloadUrl.startsWith('data:')) {
+      return this.dataUrlToUint8Array(file.downloadUrl);
+    }
+    const url = file.contentUrl || file.downloadUrl;
+    if (url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${file.filename}`);
+      const ab = await res.arrayBuffer();
+      return new Uint8Array(ab);
+    }
+    throw new Error('Unable to retrieve binary data for ' + file.filename);
+  }
+
+  async performClientPdfMerge(options) {
+    const pdfLib = await this.ensurePdfLib();
+    const { PDFDocument, rgb, StandardFonts } = pdfLib;
+
     const fill = document.getElementById('proc-fill');
-    let p = 20;
-    const interval = setInterval(() => {
-      p += 20;
-      if (fill) fill.style.width = `${Math.min(100, p)}%`;
-      if (p >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          document.getElementById('proc-spinner').style.display = 'none';
-          document.getElementById('proc-success').style.display = 'block';
-          document.getElementById('proc-title').textContent = 'Merge Complete!';
-          document.getElementById('proc-desc').textContent = `${filename} is ready to download.`;
-          
-          const dlBtn = document.getElementById('btn-proc-download');
-          dlBtn.textContent = `Download ${filename}`;
-          const blob = new Blob([`%PDF-1.4\n% DocuVex Pro Merged Deliverable: ${filename}\n% Author: NxD\n%%EOF`], { type: 'application/pdf' });
-          dlBtn.href = URL.createObjectURL(blob);
-          dlBtn.download = filename;
-          document.getElementById('proc-actions').style.display = 'block';
-        }, 350);
+    const desc = document.getElementById('proc-desc');
+    const updateProgress = (pct, text) => {
+      if (fill) fill.style.width = `${pct}%`;
+      if (desc && text) desc.textContent = text;
+    };
+
+    updateProgress(15, 'Initializing PDF portfolio canvas...');
+    const mergedPdf = await PDFDocument.create();
+    const font = await mergedPdf.embedFont(StandardFonts.Helvetica);
+    const boldFont = await mergedPdf.embedFont(StandardFonts.HelveticaBold);
+
+    const hexToRgb = (hex) => {
+      hex = (hex || '#3b82f6').replace('#', '');
+      if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+      const num = parseInt(hex, 16);
+      return rgb((num >> 16 & 255) / 255, (num >> 8 & 255) / 255, (num & 255) / 255);
+    };
+
+    let targetWidth = 595.28;
+    let targetHeight = 841.89;
+    if (options.pageSize === 'letter') {
+      targetWidth = 612;
+      targetHeight = 792;
+    } else if (options.pageSize === 'legal') {
+      targetWidth = 612;
+      targetHeight = 1008;
+    }
+    if (options.orientation === 'landscape') {
+      const temp = targetWidth;
+      targetWidth = targetHeight;
+      targetHeight = temp;
+    }
+
+    // 1. Cover Page
+    let coverAdded = false;
+    if (options.hasCover && options.coverTitle && options.coverTitle.trim()) {
+      updateProgress(25, 'Designing executive cover page...');
+      const coverPage = mergedPdf.addPage([targetWidth, targetHeight]);
+      const themeRgb = hexToRgb(options.coverTheme);
+
+      // Top color banner
+      coverPage.drawRectangle({
+        x: 0,
+        y: targetHeight - 90,
+        width: targetWidth,
+        height: 90,
+        color: themeRgb
+      });
+
+      // Accent stripe
+      coverPage.drawRectangle({
+        x: 0,
+        y: targetHeight - 100,
+        width: targetWidth,
+        height: 10,
+        color: rgb(0.08, 0.12, 0.2)
+      });
+
+      coverPage.drawText(options.coverTitle.trim(), {
+        x: 50,
+        y: targetHeight - 250,
+        size: 28,
+        font: boldFont,
+        color: rgb(0.12, 0.16, 0.22)
+      });
+
+      if (options.coverSubtitle) {
+        coverPage.drawText(options.coverSubtitle.trim(), {
+          x: 50,
+          y: targetHeight - 290,
+          size: 14,
+          font: font,
+          color: rgb(0.4, 0.45, 0.55)
+        });
       }
-    }, 180);
+
+      const authorText = options.coverAuthor ? options.coverAuthor.trim() : 'DocuVex Pro Suite by NxD';
+      coverPage.drawText(`Author: ${authorText}`, {
+        x: 50,
+        y: targetHeight - 340,
+        size: 12,
+        font: boldFont,
+        color: rgb(0.2, 0.25, 0.35)
+      });
+
+      const todayStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      coverPage.drawText(`Compiled on: ${todayStr} • ${this.mergeOrder.length} Components`, {
+        x: 50,
+        y: targetHeight - 365,
+        size: 11,
+        font: font,
+        color: rgb(0.45, 0.5, 0.6)
+      });
+
+      coverPage.drawText('Powered by DocuVex Pro Universal File Engine — Created by NxD', {
+        x: 50,
+        y: 40,
+        size: 9,
+        font: font,
+        color: rgb(0.6, 0.65, 0.7)
+      });
+
+      coverAdded = true;
+    }
+
+    const tocEntries = [];
+    let pageOffset = coverAdded ? 1 : 0;
+
+    // 2. Iterate each file in mergeOrder
+    for (let i = 0; i < this.mergeOrder.length; i++) {
+      const file = this.mergeOrder[i];
+      const stepPct = 30 + Math.round((i / this.mergeOrder.length) * 50);
+      updateProgress(stepPct, `Merging document ${i + 1} of ${this.mergeOrder.length}: ${file.filename}...`);
+
+      const bytes = await this.getFileBytes(file);
+      const ext = (file.ext || file.filename.split('.').pop() || '').toLowerCase();
+
+      if (ext === 'pdf') {
+        try {
+          const srcDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+          const pages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
+          tocEntries.push({ title: file.filename, startPage: pageOffset + 1, pageCount: pages.length });
+          pages.forEach(p => mergedPdf.addPage(p));
+          pageOffset += pages.length;
+        } catch (e) {
+          console.warn('PDF load error:', e);
+        }
+      } else if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext)) {
+        try {
+          const imgSrc = file.downloadUrl && file.downloadUrl.startsWith('data:')
+            ? file.downloadUrl
+            : (file.fileData ? (file.fileData.startsWith('data:') ? file.fileData : `data:image/${ext};base64,${file.fileData}`) : (file.contentUrl || file.downloadUrl));
+          
+          let embeddedImage;
+          if (ext === 'jpg' || ext === 'jpeg') {
+            try {
+              embeddedImage = await mergedPdf.embedJpg(bytes);
+            } catch (err) {
+              const img = await this.loadImageElement(imgSrc);
+              const pngBytes = this.convertImageToPngBytes(img);
+              embeddedImage = await mergedPdf.embedPng(pngBytes);
+            }
+          } else if (ext === 'png') {
+            try {
+              embeddedImage = await mergedPdf.embedPng(bytes);
+            } catch (err) {
+              const img = await this.loadImageElement(imgSrc);
+              const pngBytes = this.convertImageToPngBytes(img);
+              embeddedImage = await mergedPdf.embedPng(pngBytes);
+            }
+          } else {
+            const img = await this.loadImageElement(imgSrc);
+            const pngBytes = this.convertImageToPngBytes(img);
+            embeddedImage = await mergedPdf.embedPng(pngBytes);
+          }
+
+          const page = mergedPdf.addPage([targetWidth, targetHeight]);
+          const margin = 36;
+          const { width, height } = embeddedImage.scaleToFit(targetWidth - margin * 2, targetHeight - margin * 2);
+          page.drawImage(embeddedImage, {
+            x: (targetWidth - width) / 2,
+            y: (targetHeight - height) / 2,
+            width,
+            height
+          });
+          tocEntries.push({ title: file.filename, startPage: pageOffset + 1, pageCount: 1 });
+          pageOffset += 1;
+        } catch (e) {
+          console.warn('Image embedding error:', e);
+        }
+      } else {
+        // Plain text, Markdown, CSV, code
+        try {
+          const textDecoder = new TextDecoder('utf-8');
+          const content = textDecoder.decode(bytes);
+          const page = mergedPdf.addPage([targetWidth, targetHeight]);
+          const lines = content.split('\n').slice(0, 45);
+          let y = targetHeight - 50;
+          page.drawText(file.filename, { x: 50, y, size: 16, font: boldFont });
+          y -= 25;
+          page.drawRectangle({ x: 50, y, width: targetWidth - 100, height: 1.5, color: rgb(0.8, 0.85, 0.9) });
+          y -= 25;
+          for (const line of lines) {
+            if (y < 40) break;
+            page.drawText(line.substring(0, 85), { x: 50, y, size: 10, font });
+            y -= 16;
+          }
+          tocEntries.push({ title: file.filename, startPage: pageOffset + 1, pageCount: 1 });
+          pageOffset += 1;
+        } catch (e) {
+          console.warn('Text component embedding error:', e);
+        }
+      }
+    }
+
+    // 3. Table of Contents
+    if (options.generateTOC && tocEntries.length > 1) {
+      updateProgress(85, 'Compiling dynamic Table of Contents...');
+      const tocPage = mergedPdf.insertPage(coverAdded ? 1 : 0, [targetWidth, targetHeight]);
+      tocPage.drawText('Table of Contents', {
+        x: 50,
+        y: targetHeight - 60,
+        size: 22,
+        font: boldFont,
+        color: rgb(0.1, 0.1, 0.1)
+      });
+      tocPage.drawRectangle({
+        x: 50,
+        y: targetHeight - 75,
+        width: targetWidth - 100,
+        height: 2,
+        color: hexToRgb(options.coverTheme)
+      });
+
+      let y = targetHeight - 110;
+      for (let i = 0; i < tocEntries.length; i++) {
+        if (y < 50) break;
+        const item = tocEntries[i];
+        const pageNum = item.startPage + 1; // offset by 1 for TOC page itself
+        tocPage.drawText(`${i + 1}.  ${item.title.substring(0, 45)}`, { x: 50, y, size: 12, font });
+        tocPage.drawText(`Page ${pageNum}`, { x: targetWidth - 110, y, size: 12, font: boldFont, color: rgb(0.2, 0.2, 0.2) });
+        y -= 26;
+      }
+    }
+
+    // 4. Page numbering
+    if (options.pageNumbering && options.pageNumbering !== 'none') {
+      const totalPages = mergedPdf.getPageCount();
+      for (let i = (coverAdded ? 1 : 0); i < totalPages; i++) {
+        const page = mergedPdf.getPage(i);
+        const { width, height } = page.getSize();
+        const text = `Page ${i + 1} of ${totalPages}`;
+        let x = width / 2 - 30;
+        let y = 20;
+        if (options.pageNumbering === 'bottom-right') x = width - 90;
+        if (options.pageNumbering === 'top-right') {
+          x = width - 90;
+          y = height - 25;
+        }
+        page.drawText(text, { x, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+      }
+    }
+
+    updateProgress(95, 'Finalizing genuine PDF byte stream...');
+    const pdfBytes = await mergedPdf.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(blob);
+
+    updateProgress(100, 'Merge Complete! Ready to download.');
+    document.getElementById('proc-spinner').style.display = 'none';
+    document.getElementById('proc-success').style.display = 'block';
+    document.getElementById('proc-title').textContent = 'Merge Complete!';
+    document.getElementById('proc-desc').textContent = `${options.filename} (${this.formatBytes(pdfBytes.length)}) is ready.`;
+
+    const dlBtn = document.getElementById('btn-proc-download');
+    dlBtn.textContent = `Download ${options.filename}`;
+    dlBtn.href = blobUrl;
+    dlBtn.download = options.filename;
+    document.getElementById('proc-actions').style.display = 'block';
+
+    // Auto-trigger direct download
+    const autoLink = document.createElement('a');
+    autoLink.href = blobUrl;
+    autoLink.download = options.filename;
+    document.body.appendChild(autoLink);
+    autoLink.click();
+    document.body.removeChild(autoLink);
+
+    this.showToast(`Merged & downloaded ${options.filename} as PDF!`);
   }
 
   // =========================================================================
@@ -1507,33 +1869,45 @@ class DocuVexApp {
     ctx.drawImage(drawCanvas, 0, 0);
 
     const dataUrl = merged.toDataURL('image/jpeg', 0.95);
-    this.showToast('Exporting high-resolution PDF deliverable...');
+    this.showToast('Generating genuine high-resolution PDF...');
+
+    let filename = `Edited_${this.currentViewerFile ? this.currentViewerFile.filename : 'Document.pdf'}`;
+    if (!filename.toLowerCase().endsWith('.pdf')) {
+      filename = filename.replace(/\.[^/.]+$/, '') + '.pdf';
+    }
 
     try {
-      const filename = `Edited_${this.currentViewerFile ? this.currentViewerFile.filename : 'Document.pdf'}`;
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename,
-          data: dataUrl,
-          mimeType: 'image/jpeg'
-        })
-      });
+      const pdfLib = await this.ensurePdfLib();
+      const { PDFDocument } = pdfLib;
+      const pdfDoc = await PDFDocument.create();
+      const imgBytes = this.dataUrlToUint8Array(dataUrl);
+      const image = await pdfDoc.embedJpg(imgBytes);
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          this.showToast('Saved to workspace!');
-          this.closeModals();
-          window.location.href = data.file.downloadUrl;
-          return;
-        }
-      }
-    } catch (e) {}
+      // Match canvas dimensions in points
+      const page = pdfDoc.addPage([merged.width, merged.height]);
+      page.drawImage(image, { x: 0, y: 0, width: merged.width, height: merged.height });
 
-    // Standalone / GitHub Pages direct deliverable download
-    const filename = `Edited_${this.currentViewerFile ? this.currentViewerFile.filename.replace(/\.[^/.]+$/, '') : 'Document'}.jpg`;
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Download directly as genuine PDF
+      const a = document.createElement('a');
+      a.download = filename;
+      a.href = blobUrl;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+      this.showToast(`Saved & downloaded ${filename} as PDF!`);
+      this.closeModals();
+      return;
+    } catch (e) {
+      console.warn('PDFLib studio export failed, using standard download:', e);
+    }
+
+    // Direct deliverable download fallback
     const a = document.createElement('a');
     a.download = filename;
     a.href = dataUrl;
