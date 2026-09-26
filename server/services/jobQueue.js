@@ -106,9 +106,13 @@ class JobQueue {
   }
 
   async handleMergeJob(job) {
-    const { files, options = {} } = job.payload;
+    const MAX_MERGE_FILES = 100;
+    let { files, options = {} } = job.payload;
     if (!files || files.length === 0) {
       throw new Error('No files provided for merge');
+    }
+    if (files.length > MAX_MERGE_FILES) {
+      files = files.slice(0, MAX_MERGE_FILES);
     }
 
     job.progressPercent = 15;

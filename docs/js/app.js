@@ -765,6 +765,12 @@ class DocuVexApp {
       return;
     }
 
+    const MAX_MERGE_FILES = 100;
+    if (selected.length > MAX_MERGE_FILES) {
+      this.showToast(`Notice: Maximum ${MAX_MERGE_FILES} files allowed for merge. Merging first ${MAX_MERGE_FILES} files.`);
+      selected = selected.slice(0, MAX_MERGE_FILES);
+    }
+
     this.initialMergeOrder = [...selected];
     this.mergeOrder = [...selected];
     this.renderMergeFilmstrip();
@@ -773,6 +779,10 @@ class DocuVexApp {
   }
 
   renderMergeFilmstrip() {
+    const MAX_MERGE_FILES = 100;
+    if (this.mergeOrder.length > MAX_MERGE_FILES) {
+      this.mergeOrder = this.mergeOrder.slice(0, MAX_MERGE_FILES);
+    }
     const countEl = document.getElementById('merge-file-count');
     if (countEl) countEl.textContent = this.mergeOrder.length;
 
@@ -798,6 +808,11 @@ class DocuVexApp {
   async startAdvancedMerge() {
     this.closeModals();
     this.showProcessingModal('Merging into PDF Portfolio...', 'Initializing PDF engine & assembling components...');
+
+    const MAX_MERGE_FILES = 100;
+    if (this.mergeOrder.length > MAX_MERGE_FILES) {
+      this.mergeOrder = this.mergeOrder.slice(0, MAX_MERGE_FILES);
+    }
 
     let filename = document.getElementById('merge-filename').value.trim() || 'Combined_Portfolio.pdf';
     if (!filename.toLowerCase().endsWith('.pdf')) {
@@ -1101,6 +1116,11 @@ class DocuVexApp {
 
     const tocEntries = [];
     let pageOffset = coverAdded ? 1 : 0;
+
+    const MAX_MERGE_FILES = 100;
+    if (this.mergeOrder.length > MAX_MERGE_FILES) {
+      this.mergeOrder = this.mergeOrder.slice(0, MAX_MERGE_FILES);
+    }
     const totalCount = this.mergeOrder.length;
 
     // 2. High-Capacity Batch Iteration with Non-blocking UI Yielding

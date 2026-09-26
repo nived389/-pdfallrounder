@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="css/style.css?v=2.8.0">
+  <link rel="stylesheet" href="css/style.css?v=2.9.0">
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js"></script>
@@ -99,7 +99,7 @@
             </svg>
           </div>
           <h2>Drop your files here, or <span class="browse-link">browse</span></h2>
-          <p class="drop-help">Supports PDFs, Images (PNG, JPG, WEBP, BMP), Word (DOCX), Text (TXT, HTML, CSV) • Handles 100+ files</p>
+          <p class="drop-help">Supports PDFs, Images (PNG, JPG, WEBP, BMP), Word (DOCX), Text (TXT, HTML, CSV) • Merge up to 100 files</p>
         </div>
 
         <!-- Live Upload Progress -->
@@ -189,7 +189,7 @@
       <div class="modal-header">
         <div class="modal-title-wrap">
           <h3>Advanced Merge to PDF Studio</h3>
-          <p class="modal-subtitle">Sequence files, generate cover pages, and customize output dimensions</p>
+          <p class="modal-subtitle">Sequence up to 100 files, generate cover pages, and customize output dimensions</p>
         </div>
         <button class="btn-close" onclick="app.closeModals()">✕</button>
       </div>
@@ -198,7 +198,7 @@
         <!-- Filmstrip with batch controls and count -->
         <div class="filmstrip-header">
           <div class="filmstrip-title">
-            Page Sequence (<strong id="merge-file-count">0</strong> queued):
+            Page Sequence (<strong id="merge-file-count">0</strong> / 100 max queued):
           </div>
           <div class="filmstrip-actions">
             <button type="button" class="btn-filmstrip" id="btn-merge-sort-az" title="Sort files by Name A to Z">Sort A-Z</button>
@@ -694,6 +694,6 @@
   <!-- Toast Notification -->
   <div id="toast" class="simple-toast"></div>
 
-  <script src="js/app.js?v=2.8.0"></script>
+  <script src="js/app.js?v=2.9.0"></script>
 </body>
 </html>
