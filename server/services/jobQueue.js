@@ -128,6 +128,16 @@ class JobQueue {
       return rgb((num >> 16 & 255) / 255, (num >> 8 & 255) / 255, (num & 255) / 255);
     }
 
+    function sanitizeForPdf(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/[\u2013\u2014]/g, '-')
+        .replace(/[\u2026]/g, '...')
+        .replace(/[^\x20-\x7E\xA0-\xFF]/g, ' ');
+    }
+
     const mergedPdf = await PDFDocument.create();
     const font = await mergedPdf.embedFont(StandardFonts.Helvetica);
     const boldFont = await mergedPdf.embedFont(StandardFonts.HelveticaBold);
@@ -160,7 +170,7 @@ class JobQueue {
         color: rgb(0.08, 0.12, 0.2)
       });
 
-      coverPage.drawText(options.coverTitle.trim(), {
+      coverPage.drawText(sanitizeForPdf(options.coverTitle.trim()), {
         x: 50,
         y: 520,
         size: 28,
@@ -169,7 +179,7 @@ class JobQueue {
       });
 
       if (options.coverSubtitle) {
-        coverPage.drawText(options.coverSubtitle.trim(), {
+        coverPage.drawText(sanitizeForPdf(options.coverSubtitle.trim()), {
           x: 50,
           y: 480,
           size: 14,
@@ -179,7 +189,7 @@ class JobQueue {
       }
 
       const author = options.coverAuthor ? options.coverAuthor.trim() : 'DocuVex Pro Suite by NxD';
-      coverPage.drawText(`Author: ${author}`, {
+      coverPage.drawText(sanitizeForPdf(`Author: ${author}`), {
         x: 50,
         y: 430,
         size: 12,
@@ -188,7 +198,7 @@ class JobQueue {
       });
 
       const todayStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      coverPage.drawText(`Generated on: ${todayStr} • Total Components: ${files.length}`, {
+      coverPage.drawText(sanitizeForPdf(`Generated on: ${todayStr} - Total Components: ${files.length}`), {
         x: 50,
         y: 405,
         size: 11,
@@ -196,7 +206,7 @@ class JobQueue {
         color: rgb(0.45, 0.5, 0.6)
       });
 
-      coverPage.drawText('Powered by DocuVex Pro Universal Engine — Created by NxD', {
+      coverPage.drawText('Powered by DocuVex Pro Universal Engine - Created by NxD', {
         x: 50,
         y: 50,
         size: 9,
