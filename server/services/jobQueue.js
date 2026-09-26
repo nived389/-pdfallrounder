@@ -297,20 +297,28 @@ class JobQueue {
       }
     }
 
-    // 3. Table of Contents
+    // 3. Dynamic Multi-Page Table of Contents
     if (options.generateTOC && tocEntries.length > 1) {
-      const tocPage = mergedPdf.insertPage(coverAdded ? 1 : 0, [595.28, 841.89]);
-      tocPage.drawText('Table of Contents', { x: 50, y: 780, size: 22, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
-      tocPage.drawRectangle({ x: 50, y: 765, width: 495.28, height: 2, color: hexToRgb(options.coverTheme || '#3b82f6') });
+      const entriesPerPage = 25;
+      const totalTocPages = Math.ceil(tocEntries.length / entriesPerPage);
 
-      let y = 730;
-      for (let i = 0; i < tocEntries.length; i++) {
-        if (y < 50) break;
-        const item = tocEntries[i];
-        const pageNum = item.startPage + 1; // offset by 1 for TOC itself
-        tocPage.drawText(`${i + 1}.  ${item.title.substring(0, 50)}`, { x: 50, y, size: 12, font });
-        tocPage.drawText(`Page ${pageNum}`, { x: 480, y, size: 12, font: boldFont, color: rgb(0.2, 0.2, 0.2) });
-        y -= 26;
+      for (let tp = 0; tp < totalTocPages; tp++) {
+        const tocPage = mergedPdf.insertPage((coverAdded ? 1 : 0) + tp, [595.28, 841.89]);
+        const titleText = totalTocPages > 1 ? `Table of Contents (${tp + 1}/${totalTocPages})` : 'Table of Contents';
+        tocPage.drawText(titleText, { x: 50, y: 780, size: 20, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
+        tocPage.drawRectangle({ x: 50, y: 765, width: 495.28, height: 2, color: hexToRgb(options.coverTheme || '#3b82f6') });
+
+        const pageSlice = tocEntries.slice(tp * entriesPerPage, (tp + 1) * entriesPerPage);
+        let y = 730;
+
+        for (let i = 0; i < pageSlice.length; i++) {
+          const item = pageSlice[i];
+          const globalIdx = tp * entriesPerPage + i + 1;
+          const pageNum = item.startPage + totalTocPages;
+          tocPage.drawText(`${globalIdx}.  ${item.title.substring(0, 48)}`, { x: 50, y, size: 11, font });
+          tocPage.drawText(`Page ${pageNum}`, { x: 480, y, size: 11, font: boldFont, color: rgb(0.2, 0.2, 0.2) });
+          y -= 25;
+        }
       }
     }
 
